@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id_usuario    Int      @id @default(autoincrement())
+  username      String   @unique @db.VarChar(50)
+  password_hash String   @db.VarChar(255)
+  nombre        String?  @db.VarChar(100)
+  rol           Rol      @default(empleado)
+  activo        Boolean  @default(true)
+  created_at    DateTime @default(now())
+
+  ordenes OrdenServicio[]
+}
+
+model Cliente {
+  rfc              String   @id @db.VarChar(13)
+  nombre           String   @db.VarChar(100)
+  apellido_paterno String   @db.VarChar(60)
+  apellido_materno String?  @db.VarChar(60)
+  telefono         String?  @db.VarChar(15)
+  correo           String?  @db.VarChar(100)
+  fecha_registro   DateTime @default(now())
+
+  vehiculos VehiculoCliente[]
+  ordenes   OrdenServicio[]
+  ventas    Venta[]
+}
+
+model Vehiculo {
+  id_vehiculo Int     @id @default(autoincrement())
+  marca       String? @db.VarChar(60)
+  modelo      String  @db.VarChar(100)
+  anio        Int
+  color       String? @db.VarChar(50)
+  placas      String  @unique @db.VarChar(10)
+
+  clientes VehiculoCliente[]
+  ordenes  OrdenServicio[]
+}
+
+model VehiculoCliente {
+  id          Int      @id @default(autoincrement())
+  id_vehiculo Int
+  rfc_cliente String   @db.VarChar(13)
+  fecha       DateTime @default(now())
+
+  vehiculo Vehiculo @relation(fields: [id_vehiculo], references: [id_vehiculo])
+  cliente  Cliente  @relation(fields: [rfc_cliente], references: [rfc])
+
+  @@unique([id_vehiculo, rfc_cliente])
+}
+
+model Refaccion {
+  id_refaccion    Int     @id @default(autoincrement())
+  nombre          String  @db.VarChar(100)
+  descripcion     String? @db.Text
+  lado            Lado    @default(NA)
+  precio_unitario Decimal @default(0.00) @db.Decimal(10, 2)
+
+  detalles DetalleOrden[]
+}
+
+model OrdenServicio {
+  id_orden       Int         @id @default(autoincrement())
+  id_vehiculo    Int
+  rfc_cliente    String      @db.VarChar(13)
+  id_usuario     Int?
+  fecha_creacion DateTime    @default(now())
+  estado         EstadoOrden @default(pendiente)
+  observaciones  String?     @db.Text
+
+  vehiculo Vehiculo  @relation(fields: [id_vehiculo], references: [id_vehiculo])
+  cliente  Cliente   @relation(fields: [rfc_cliente], references: [rfc])
+  usuario  Usuario?  @relation(fields: [id_usuario], references: [id_usuario])
+  detalles DetalleOrden[]
+  venta    Venta?
+}
+
+model DetalleOrden {
+  id_detalle      Int     @id @default(autoincrement())
+  id_orden        Int
+  id_refaccion    Int
+  cantidad        Int     @default(1)
+  precio_unitario Decimal @db.Decimal(10, 2)
+
+  orden     OrdenServicio @relation(fields: [id_orden], references: [id_orden])
+  refaccion Refaccion     @relation(fields: [id_refaccion], references: [id_refaccion])
+}
+
+model Venta {
+  id_venta     Int        @id @default(autoincrement())
+  id_orden     Int        @unique
+  rfc_cliente  String     @db.VarChar(13)
+  subtotal     Decimal    @default(0.00) @db.Decimal(10, 2)
+  mano_obra    Decimal    @default(0.00) @db.Decimal(10, 2)
+  iva          Decimal    @default(0.00) @db.Decimal(10, 2)
+  precio_total Decimal    @db.Decimal(10, 2)
+  metodo_pago  MetodoPago @default(efectivo)
+  estado_pago  EstadoPago @default(pendiente)
+  fecha_venta  DateTime   @default(now())
+
+  orden   OrdenServicio @relation(fields: [id_orden], references: [id_orden])
+  cliente Cliente       @relation(fields: [rfc_cliente], references: [rfc])
+}
+
+enum Rol {
+  admin
+  empleado
+}
+
+enum Lado {
+  izquierdo
+  derecho
+  central
+  NA
+}
+
+enum EstadoOrden {
+  pendiente
+  en_proceso
+  completado
+  cancelado
+}
+
+enum MetodoPago {
+  efectivo
+  tarjeta
+  transferencia
+}
+
+enum EstadoPago {
+  pendiente
+  pagado
+  cancelado
+}
+

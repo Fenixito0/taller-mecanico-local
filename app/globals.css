@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-navy:       #0F1F3D;
+  --color-navy-light: #1A2F4F;
+  --color-navy-dark:  #080F1E;
+  --color-red:        #C8102E;
+  --color-red-dark:   #A50D26;
+  --color-red-light:  #FFF0F2;
+}
+
+:root {
+  --navy:       #0F1F3D;
+  --navy-light: #1A2F4F;
+  --navy-dark:  #080F1E;
+  --red:        #C8102E;
+  --red-dark:   #A50D26;
+  --red-light:  #FFF0F2;
+  --gray-bg:    #F5F7FA;
+  --border:     #E5E7EB;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: 'Barlow', sans-serif;
+  background: var(--gray-bg);
+  color: var(--navy);
+}
+
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: #F1F1F1; }
+::-webkit-scrollbar-thumb { background: var(--navy-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--red); }
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 3px rgba(200,16,46,0.1);
+}
+
+button { transition: all 0.2s ease; }
