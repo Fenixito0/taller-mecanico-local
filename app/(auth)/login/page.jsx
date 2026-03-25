@@ -16,16 +16,19 @@ export default function LoginPage() {
     setError("")
 
     const result = await signIn("credentials", {
-      username: form.username,
-      password: form.password,
-      redirect: false,
-    })
+  username: form.username,
+  password: form.password,
+  redirect: false,
+})
 
 if (result?.ok) {
   router.push("/clientes")
   router.refresh()
+} else if (result?.error?.startsWith("Demasiados")) {
+  setError(result.error)
+  setLoading(false)
 } else {
-  setError(result?.error || "Usuario o contraseña incorrectos.")
+  setError("Usuario o contraseña incorrectos.")
   setLoading(false)
 }
   }
