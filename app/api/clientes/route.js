@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth-check"
+import { registrarAuditoria } from "@/lib/auditoria"
 import { NextResponse } from "next/server"
  
 export async function GET() {
@@ -27,6 +28,7 @@ export async function POST(req) {
     const cliente = await prisma.cliente.create({
       data: { rfc, nombre, apellido_paterno, apellido_materno, telefono, correo },
     })
+    await registrarAuditoria(`Creó cliente: ${nombre} ${apellido_paterno} (${rfc})`, "clientes")
     return NextResponse.json(cliente, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Error al crear cliente" }, { status: 500 })

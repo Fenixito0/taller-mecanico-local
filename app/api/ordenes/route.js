@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth-check"
+import { registrarAuditoria } from "@/lib/auditoria"
 import { NextResponse } from "next/server"
  
 export async function GET() {
@@ -53,6 +54,7 @@ export async function POST(req) {
       })
       return o
     })
+    await registrarAuditoria(`Generó orden #${orden.id_orden} para cliente RFC: ${rfc_cliente}`, "ordenes")
     return NextResponse.json(orden, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Error al crear orden" }, { status: 500 })

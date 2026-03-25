@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth-check"
+import { registrarAuditoria } from "@/lib/auditoria"
 import { NextResponse } from "next/server"
  
 export async function GET(req) {
@@ -47,6 +48,7 @@ export async function POST(req) {
       await tx.vehiculoCliente.create({ data: { id_vehiculo: v.id_vehiculo, rfc_cliente } })
       return v
     })
+    await registrarAuditoria(`Registró vehículo: ${marca} ${modelo} (${placas})`, "vehiculos")
     return NextResponse.json(vehiculo, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Error al crear vehículo" }, { status: 500 })

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth-check"
+import { registrarAuditoria } from "@/lib/auditoria"
 import { NextResponse } from "next/server"
  
 export async function PUT(req, { params }) {
@@ -18,6 +19,7 @@ export async function PUT(req, { params }) {
       }
       return v
     })
+    await registrarAuditoria(`Editó vehículo: ${marca} ${modelo} (ID: ${id})`, "vehiculos")
     return NextResponse.json(vehiculo)
   } catch {
     return NextResponse.json({ error: "Error al actualizar vehículo" }, { status: 500 })
@@ -34,6 +36,7 @@ export async function DELETE(_, { params }) {
       await tx.vehiculoCliente.deleteMany({ where: { id_vehiculo: id } })
       await tx.vehiculo.delete({ where: { id_vehiculo: id } })
     })
+    await registrarAuditoria(`Eliminó vehículo con ID: ${id}`, "vehiculos")
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: "Error al eliminar vehículo" }, { status: 500 })

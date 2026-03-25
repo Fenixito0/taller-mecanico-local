@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth-check"
+import { registrarAuditoria } from "@/lib/auditoria"
 import { NextResponse } from "next/server"
  
 export async function POST(req) {
@@ -27,6 +28,7 @@ export async function POST(req) {
       await tx.ordenServicio.update({ where: { id_orden: Number(id_orden) }, data: { estado: "completado" } })
       return v
     })
+    await registrarAuditoria(`Cobró venta de orden #${id_orden} por $${precio_total} (${metodo_pago})`, "ventas")
     return NextResponse.json(venta, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Error al registrar la venta" }, { status: 500 })

@@ -18,6 +18,7 @@ model Usuario {
   created_at    DateTime @default(now())
 
   ordenes OrdenServicio[]
+  auditorias Auditoria[]
 }
 
 model Cliente {
@@ -140,5 +141,16 @@ enum EstadoPago {
   pendiente
   pagado
   cancelado
+}
+
+model Auditoria {
+  id_auditoria Int      @id @default(autoincrement())
+  id_usuario   Int?
+  username     String?  @db.VarChar(50)
+  accion       String   @db.VarChar(100)
+  modulo       String   @db.VarChar(50)
+  fecha        DateTime @default(now())
+
+  usuario Usuario? @relation(fields: [id_usuario], references: [id_usuario])
 }
 

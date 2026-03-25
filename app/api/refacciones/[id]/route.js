@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth-check"
+import { registrarAuditoria } from "@/lib/auditoria"
 import { NextResponse } from "next/server"
  
 export async function PUT(req, { params }) {
@@ -14,6 +15,7 @@ export async function PUT(req, { params }) {
       where: { id_refaccion: id },
       data: { nombre, descripcion, lado, precio_unitario: parseFloat(precio_unitario) },
     })
+    await registrarAuditoria(`Editó refacción: ${nombre} (ID: ${id})`, "refacciones")
     return NextResponse.json(refaccion)
   } catch {
     return NextResponse.json({ error: "Error al actualizar refacción" }, { status: 500 })
@@ -27,6 +29,7 @@ export async function DELETE(_, { params }) {
     const { id: rawId } = await params
     const id = Number(rawId)
     await prisma.refaccion.delete({ where: { id_refaccion: id } })
+    await registrarAuditoria(`Eliminó refacción con ID: ${id}`, "refacciones")
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: "Error al eliminar refacción" }, { status: 500 })

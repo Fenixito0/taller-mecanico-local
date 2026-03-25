@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/auth-check"
+import { registrarAuditoria } from "@/lib/auditoria"
 import { NextResponse } from "next/server"
  
 export async function GET() {
@@ -24,6 +25,7 @@ export async function POST(req) {
     const refaccion = await prisma.refaccion.create({
       data: { nombre, descripcion, lado: lado || "NA", precio_unitario: parseFloat(precio_unitario) },
     })
+    await registrarAuditoria(`Agregó refacción al catálogo: ${nombre}`, "refacciones")
     return NextResponse.json(refaccion, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Error al crear refacción" }, { status: 500 })
