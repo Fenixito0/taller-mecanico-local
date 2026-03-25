@@ -8,22 +8,22 @@ const prisma = new PrismaClient()
 
 async function main() {
   const username = "admin"
-  const password = "admin123"       // Cambia esto antes de ejecutar
+  const password = "T4ll3r#M3c@n1co2026!"       // Cambia esto antes de ejecutar
   const nombre   = "Administrador"
 
   const hash = await bcrypt.hash(password, 12)
 
-  const usuario = await prisma.usuario.upsert({
-    where:  { username },
-    update: {},
-    create: {
-      username,
-      password_hash: hash,
-      nombre,
-      rol:    "admin",
-      activo: true,
-    },
-  })
+const usuario = await prisma.usuario.upsert({
+  where:  { username },
+  update: { password_hash: hash },
+  create: {
+    username,
+    password_hash: hash,
+    nombre,
+    rol:    "admin",
+    activo: true,
+  },
+})
 
   console.log("✅ Usuario creado:", usuario.username)
   console.log("🔑 Contraseña:    ", password)

@@ -21,13 +21,13 @@ export default function LoginPage() {
       redirect: false,
     })
 
-    if (result?.ok) {
-      router.push("/clientes")
-      router.refresh()
-    } else {
-      setError("Usuario o contraseña incorrectos.")
-      setLoading(false)
-    }
+if (result?.ok) {
+  router.push("/clientes")
+  router.refresh()
+} else {
+  setError(result?.error || "Usuario o contraseña incorrectos.")
+  setLoading(false)
+}
   }
 
   const labelStyle = {
