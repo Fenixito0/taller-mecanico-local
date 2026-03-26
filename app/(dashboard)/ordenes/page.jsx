@@ -1,18 +1,13 @@
 "use client"
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-
-// ============================================================
-// ARCHIVO: app/(dashboard)/ordenes/page.jsx
-// ============================================================
 
 const ESTADO_CONFIG = {
   pendiente:  { label:"Pendiente",  bg:"#FFF7ED", color:"#C2410C", border:"#FED7AA", dot:"#F97316" },
-  en_proceso: { label:"En proceso", bg:"#EFF6FF", color:"#1D4ED8", border:"#BFDBFE", dot:"#3B82F6" },
   completado: { label:"Completado", bg:"#F0FDF4", color:"#15803D", border:"#BBF7D0", dot:"#22C55E" },
   cancelado:  { label:"Cancelado",  bg:"#FFF1F2", color:"#BE123C", border:"#FECDD3", dot:"#F43F5E" },
 }
+
 const LADO_COLORS = {
   izquierdo:{ bg:"#EFF6FF", color:"#1D4ED8", border:"#BFDBFE" },
   derecho:  { bg:"#F0FDF4", color:"#15803D", border:"#BBF7D0" },
@@ -32,11 +27,13 @@ function EstadoBadge({ estado }) {
 }
 
 export default function OrdenesPage() {
-  const [ordenes, setOrdenes]         = useState([])
-  const [loading, setLoading]         = useState(true)
-  const [search, setSearch]           = useState("")
+  const [ordenes, setOrdenes]           = useState([])
+  const [loading, setLoading]           = useState(true)
+  const [search, setSearch]             = useState("")
   const [filtroEstado, setFiltroEstado] = useState("todos")
-  const [expandidas, setExpandidas]   = useState(new Set())
+  const [expandidas, setExpandidas]     = useState(new Set())
+  const [cancelTarget, setCancelTarget] = useState(null)
+  const [canceling, setCanceling]       = useState(false)
 
   const fetchOrdenes = async () => {
     setLoading(true)
@@ -57,6 +54,16 @@ export default function OrdenesPage() {
     })
   }
 
+  const handleCancelar = async () => {
+    setCanceling(true)
+    try {
+      await fetch(`/api/ordenes/${cancelTarget.id_orden}/cancelar`, { method: "PATCH" })
+      setCancelTarget(null)
+      fetchOrdenes()
+    } catch { /* silencioso */ }
+    finally { setCanceling(false) }
+  }
+
   const filtered = ordenes.filter(o => {
     const matchSearch = `${o.cliente} ${o.placas} ${o.vehiculo}`.toLowerCase().includes(search.toLowerCase())
     const matchEstado = filtroEstado === "todos" || o.estado === filtroEstado
@@ -65,21 +72,21 @@ export default function OrdenesPage() {
 
   const counts = {
     pendiente:  ordenes.filter(o => o.estado === "pendiente").length,
-    en_proceso: ordenes.filter(o => o.estado === "en_proceso").length,
     completado: ordenes.filter(o => o.estado === "completado").length,
+    cancelado:  ordenes.filter(o => o.estado === "cancelado").length,
   }
-
-  const cobrable = (estado) => estado === "pendiente" || estado === "en_proceso"
 
   return (
     <>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"2rem" }}>
         <div>
-          <h1 style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"2rem", fontWeight:700, color:"var(--navy)", letterSpacing:"0.04em" }}>ÓRDENES DE SERVICIO</h1>
+          <h1 style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"2rem", fontWeight:700, color:"var(--navy)", letterSpacing:"0.04em" }}>GENERAR ORDEN</h1>
           <p style={{ color:"#9CA3AF", fontSize:"0.875rem", marginTop:"0.2rem" }}>{ordenes.length} orden{ordenes.length!==1?"es":""} registrada{ordenes.length!==1?"s":""}</p>
         </div>
         <Link href="/ordenes/nueva" style={{ textDecoration:"none" }}>
-          <button style={{ display:"flex", alignItems:"center", gap:"0.5rem", background:"var(--red)", color:"#fff", border:"none", borderRadius:"10px", padding:"0.7rem 1.25rem", fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.85rem", fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", cursor:"pointer", boxShadow:"0 4px 14px rgba(200,16,46,0.3)" }}>
+          <button style={{ display:"flex", alignItems:"center", gap:"0.5rem", background:"var(--red)", color:"#fff", border:"none", borderRadius:"10px", padding:"0.7rem 1.25rem", fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.85rem", fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", cursor:"pointer", boxShadow:"0 4px 14px rgba(200,16,46,0.3)" }}
+            onMouseEnter={e => e.currentTarget.style.background="var(--red-dark)"}
+            onMouseLeave={e => e.currentTarget.style.background="var(--red)"}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Nueva Orden
           </button>
@@ -88,7 +95,11 @@ export default function OrdenesPage() {
 
       {/* Tarjetas resumen */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1rem", marginBottom:"1.75rem" }}>
-        {[{ label:"Pendientes",count:counts.pendiente,icon:"⏳",bg:"#FFF7ED",color:"#C2410C" },{ label:"En proceso",count:counts.en_proceso,icon:"🔧",bg:"#EFF6FF",color:"#1D4ED8" },{ label:"Completadas",count:counts.completado,icon:"✅",bg:"#F0FDF4",color:"#15803D" }].map(card => (
+        {[
+          { label:"Pendientes",  count:counts.pendiente,  icon:"⏳", bg:"#FFF7ED", color:"#C2410C" },
+          { label:"Completadas", count:counts.completado, icon:"✅", bg:"#F0FDF4", color:"#15803D" },
+          { label:"Canceladas",  count:counts.cancelado,  icon:"❌", bg:"#FFF1F2", color:"#BE123C" },
+        ].map(card => (
           <div key={card.label} style={{ background:"#fff", borderRadius:"14px", padding:"1.25rem 1.5rem", border:"1px solid var(--border)", display:"flex", alignItems:"center", gap:"1rem", boxShadow:"0 2px 8px rgba(15,31,61,0.05)" }}>
             <div style={{ width:"46px", height:"46px", background:card.bg, borderRadius:"12px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.3rem", flexShrink:0 }}>{card.icon}</div>
             <div>
@@ -106,7 +117,7 @@ export default function OrdenesPage() {
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por cliente, placas..." style={{ width:"280px", padding:"0.75rem 1rem 0.75rem 2.75rem", border:"2px solid var(--border)", borderRadius:"10px", fontSize:"0.875rem", color:"var(--navy)", background:"#fff", fontFamily:"'Barlow',sans-serif" }} />
         </div>
         <div style={{ display:"flex", gap:"0.4rem" }}>
-          {[["todos","Todos"],["pendiente","Pendiente"],["en_proceso","En proceso"],["completado","Completado"],["cancelado","Cancelado"]].map(([val,lbl]) => (
+          {[["todos","Todos"],["pendiente","Pendiente"],["completado","Completado"],["cancelado","Cancelado"]].map(([val,lbl]) => (
             <button key={val} onClick={() => setFiltroEstado(val)} style={{ padding:"0.5rem 0.875rem", borderRadius:"8px", border:`1.5px solid ${filtroEstado===val?"var(--navy)":"var(--border)"}`, background:filtroEstado===val?"var(--navy)":"#fff", color:filtroEstado===val?"#fff":"#6B7280", fontSize:"0.78rem", fontWeight:600, cursor:"pointer", transition:"all 0.15s", fontFamily:"'Barlow Condensed',sans-serif" }}>{lbl}</button>
           ))}
         </div>
@@ -122,9 +133,6 @@ export default function OrdenesPage() {
         ) : filtered.length === 0 ? (
           <div style={{ padding:"4rem", textAlign:"center" }}>
             <p style={{ color:"#9CA3AF", fontSize:"0.95rem" }}>No hay órdenes que mostrar</p>
-            <p style={{ color:"#D1D5DB", fontSize:"0.82rem", marginTop:"0.3rem" }}>
-              {filtroEstado !== "todos" ? `No hay órdenes con estado "${ESTADO_CONFIG[filtroEstado]?.label}"` : "Crea una nueva orden"}
-            </p>
           </div>
         ) : (
           <table style={{ width:"100%", borderCollapse:"collapse" }}>
@@ -140,6 +148,7 @@ export default function OrdenesPage() {
               {filtered.map((o, i) => {
                 const isExpanded = expandidas.has(o.id_orden)
                 const total = o.refacciones.reduce((s, r) => s + r.precio_unitario * r.cantidad, 0)
+                const cobrable = o.estado === "pendiente"
                 return (
                   <>
                     <tr key={o.id_orden} style={{ background:isExpanded?"#F8FAFF":i%2===0?"#fff":"#FAFBFC", borderBottom:isExpanded?"none":"1px solid var(--border)" }}
@@ -170,18 +179,30 @@ export default function OrdenesPage() {
                       </td>
                       <td style={{ padding:"0.95rem 1.25rem" }}><EstadoBadge estado={o.estado} /></td>
                       <td style={{ padding:"0.95rem 1.25rem" }}>
-                        {cobrable(o.estado) ? (
-                          <Link href={`/ventas/${o.id_orden}`} style={{ textDecoration:"none" }}>
-                            <button style={{ display:"flex", alignItems:"center", gap:"0.35rem", padding:"0.4rem 0.75rem", background:"#FFF0F2", border:"none", borderRadius:"7px", color:"var(--red)", fontSize:"0.78rem", fontWeight:600, cursor:"pointer" }}
-                              onMouseEnter={e => e.currentTarget.style.background="#FFD6DB"}
-                              onMouseLeave={e => e.currentTarget.style.background="#FFF0F2"}>
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-                              Cobrar
-                            </button>
-                          </Link>
-                        ) : (
-                          <span style={{ fontSize:"0.78rem", color:"#D1D5DB", fontStyle:"italic" }}>{o.estado==="completado"?"Pagada":"Cancelada"}</span>
-                        )}
+                        <div style={{ display:"flex", gap:"0.5rem" }}>
+                          {cobrable ? (
+                            <>
+                              <Link href={`/ventas/${o.id_orden}`} style={{ textDecoration:"none" }}>
+                                <button style={{ display:"flex", alignItems:"center", gap:"0.35rem", padding:"0.4rem 0.75rem", background:"#FFF0F2", border:"none", borderRadius:"7px", color:"var(--red)", fontSize:"0.78rem", fontWeight:600, cursor:"pointer" }}
+                                  onMouseEnter={e => e.currentTarget.style.background="#FFD6DB"}
+                                  onMouseLeave={e => e.currentTarget.style.background="#FFF0F2"}>
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                                  Cobrar
+                                </button>
+                              </Link>
+                              <button onClick={() => setCancelTarget(o)} style={{ display:"flex", alignItems:"center", gap:"0.35rem", padding:"0.4rem 0.75rem", background:"#F1F5F9", border:"none", borderRadius:"7px", color:"#64748B", fontSize:"0.78rem", fontWeight:600, cursor:"pointer" }}
+                                onMouseEnter={e => e.currentTarget.style.background="#E2E8F0"}
+                                onMouseLeave={e => e.currentTarget.style.background="#F1F5F9"}>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                Cancelar
+                              </button>
+                            </>
+                          ) : (
+                            <span style={{ fontSize:"0.78rem", color:"#D1D5DB", fontStyle:"italic" }}>
+                              {o.estado==="completado"?"Pagada":"Cancelada"}
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
 
@@ -242,7 +263,32 @@ export default function OrdenesPage() {
           </div>
         )}
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+
+      {/* Modal confirmar cancelación */}
+      {cancelTarget && (
+        <div style={{ position:"fixed", inset:0, zIndex:300, background:"rgba(8,15,30,0.6)", display:"flex", alignItems:"center", justifyContent:"center", animation:"fadeIn 0.2s ease-out" }}>
+          <div style={{ background:"#fff", borderRadius:"16px", padding:"2rem", maxWidth:"420px", width:"90%", animation:"modalIn 0.3s cubic-bezier(0.34,1.4,0.64,1)" }}>
+            <div style={{ width:"56px", height:"56px", background:"#F1F5F9", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 1rem" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <h3 style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"1.2rem", color:"var(--navy)", marginBottom:"0.75rem", textAlign:"center" }}>¿Cancelar orden?</h3>
+            <div style={{ background:"#F9FAFB", borderRadius:"10px", padding:"0.875rem 1rem", marginBottom:"1.25rem", border:"1px solid var(--border)" }}>
+              <p style={{ fontWeight:700, fontSize:"0.9rem", color:"var(--navy)" }}>Orden #{String(cancelTarget.id_orden).padStart(4,"0")}</p>
+              <p style={{ fontSize:"0.82rem", color:"#6B7280", marginTop:"0.2rem" }}>{cancelTarget.cliente}</p>
+              <p style={{ fontSize:"0.75rem", color:"#9CA3AF", fontFamily:"monospace" }}>{cancelTarget.placas} · {cancelTarget.vehiculo}</p>
+            </div>
+            <p style={{ color:"#9CA3AF", fontSize:"0.82rem", marginBottom:"1.25rem", textAlign:"center" }}>La orden quedará marcada como cancelada y no podrá cobrarse.</p>
+            <div style={{ display:"flex", gap:"0.75rem", justifyContent:"center" }}>
+              <button onClick={() => setCancelTarget(null)} style={{ padding:"0.7rem 1.5rem", border:"2px solid var(--border)", borderRadius:"10px", background:"#fff", color:"var(--navy)", fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.82rem", fontWeight:700, letterSpacing:"0.1em", cursor:"pointer" }}>VOLVER</button>
+              <button onClick={handleCancelar} disabled={canceling} style={{ padding:"0.7rem 1.5rem", border:"none", borderRadius:"10px", background:canceling?"#9CA3AF":"#64748B", color:"#fff", fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.82rem", fontWeight:700, letterSpacing:"0.1em", cursor:canceling?"not-allowed":"pointer" }}>
+                {canceling?"CANCELANDO...":"CANCELAR ORDEN"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes modalIn{from{transform:scale(0.93) translateY(12px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </>
   )
 }

@@ -126,7 +126,6 @@ enum Lado {
 
 enum EstadoOrden {
   pendiente
-  en_proceso
   completado
   cancelado
 }

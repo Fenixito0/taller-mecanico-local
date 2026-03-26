@@ -18,12 +18,12 @@ const NAV_ITEMS = [
     icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>,
   },
   {
-    href: "/ordenes", label: "Generar Lista",
+    href: "/ordenes", label: "Generar Orden",
     icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
   },
   {
     href: "/ventas", label: "Cobrar Venta", disabled: true,
-    tooltip: "Accede desde una orden en Generar Lista",
+    tooltip: "Accede desde una orden en Generar Orden",
     icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
   },
 ]
@@ -34,31 +34,20 @@ export default function DashboardLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false)
   const [tooltip,   setTooltip]   = useState(false)
 
-const handleLogout = async () => {
-  await signOut({ redirect: false })
-  router.push("/login")
-}
+  const handleLogout = async () => {
+    await signOut({ redirect: false })
+    router.push("/login")
+  }
 
   return (
     <div style={{ display:"flex", minHeight:"100vh", fontFamily:"'Barlow',sans-serif" }}>
-
-      {/* ── SIDEBAR ── */}
-      <aside style={{
-        width: collapsed ? "72px" : "240px",
-        background: "linear-gradient(180deg, var(--navy-dark) 0%, var(--navy) 100%)",
-        display:"flex", flexDirection:"column",
-        transition:"width 0.3s cubic-bezier(0.4,0,0.2,1)",
-        position:"fixed", top:0, left:0, bottom:0,
-        zIndex:100, overflow:"hidden",
-      }}>
+      <aside style={{ width:collapsed?"72px":"240px", background:"linear-gradient(180deg, var(--navy-dark) 0%, var(--navy) 100%)", display:"flex", flexDirection:"column", transition:"width 0.3s cubic-bezier(0.4,0,0.2,1)", position:"fixed", top:0, left:0, bottom:0, zIndex:100, overflow:"hidden" }}>
         <div style={{ height:"3px", background:"var(--red)", flexShrink:0 }} />
 
         {/* Logo */}
-        <div style={{ padding: collapsed?"1.4rem 0":"1.4rem 1.5rem", display:"flex", alignItems:"center", gap:"0.75rem", justifyContent: collapsed?"center":"flex-start", borderBottom:"1px solid rgba(255,255,255,0.06)", flexShrink:0 }}>
+        <div style={{ padding:collapsed?"1.4rem 0":"1.4rem 1.5rem", display:"flex", alignItems:"center", gap:"0.75rem", justifyContent:collapsed?"center":"flex-start", borderBottom:"1px solid rgba(255,255,255,0.06)", flexShrink:0 }}>
           <div style={{ width:"36px", height:"36px", background:"var(--red)", borderRadius:"10px", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
-            </svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
           </div>
           {!collapsed && (
             <div>
@@ -70,29 +59,15 @@ const handleLogout = async () => {
 
         {/* Nav */}
         <nav style={{ flex:1, padding:"1rem 0", overflowY:"auto" }}>
-          {!collapsed && (
-            <p style={{ fontSize:"0.6rem", fontWeight:700, color:"rgba(255,255,255,0.25)", letterSpacing:"0.18em", textTransform:"uppercase", padding:"0 1.5rem", marginBottom:"0.5rem" }}>MÓDULOS</p>
-          )}
-
+          {!collapsed && <p style={{ fontSize:"0.6rem", fontWeight:700, color:"rgba(255,255,255,0.25)", letterSpacing:"0.18em", textTransform:"uppercase", padding:"0 1.5rem", marginBottom:"0.5rem" }}>MÓDULOS</p>}
           {NAV_ITEMS.map((item) => {
             const isActive = !item.disabled && (pathname === item.href || pathname.startsWith(item.href + "/"))
-
             if (item.disabled) {
               return (
                 <div key={item.href} style={{ padding:"0.15rem 0.75rem", position:"relative" }}
                   onMouseEnter={() => setTooltip(item.href)}
-                  onMouseLeave={() => setTooltip(false)}
-                >
-                  <div style={{
-                    display:"flex", alignItems:"center", gap:"0.85rem",
-                    padding: collapsed?"0.75rem 0":"0.75rem 0.875rem",
-                    borderRadius:"10px",
-                    color:"rgba(255,255,255,0.2)",
-                    cursor:"not-allowed",
-                    justifyContent: collapsed?"center":"flex-start",
-                    borderLeft:"3px solid transparent",
-                    position:"relative",
-                  }}>
+                  onMouseLeave={() => setTooltip(false)}>
+                  <div style={{ display:"flex", alignItems:"center", gap:"0.85rem", padding:collapsed?"0.75rem 0":"0.75rem 0.875rem", borderRadius:"10px", color:"rgba(255,255,255,0.2)", cursor:"not-allowed", justifyContent:collapsed?"center":"flex-start", borderLeft:"3px solid transparent" }}>
                     {item.icon}
                     {!collapsed && (
                       <>
@@ -101,17 +76,8 @@ const handleLogout = async () => {
                       </>
                     )}
                   </div>
-
-                  {/* Tooltip */}
                   {tooltip === item.href && !collapsed && (
-                    <div style={{
-                      position:"absolute", left:"calc(100% + 8px)", top:"50%", transform:"translateY(-50%)",
-                      background:"#1E293B", color:"#fff", fontSize:"0.75rem",
-                      padding:"0.5rem 0.875rem", borderRadius:"8px",
-                      whiteSpace:"nowrap", zIndex:200,
-                      boxShadow:"0 4px 16px rgba(0,0,0,0.3)",
-                      pointerEvents:"none",
-                    }}>
+                    <div style={{ position:"absolute", left:"calc(100% + 8px)", top:"50%", transform:"translateY(-50%)", background:"#1E293B", color:"#fff", fontSize:"0.75rem", padding:"0.5rem 0.875rem", borderRadius:"8px", whiteSpace:"nowrap", zIndex:200, boxShadow:"0 4px 16px rgba(0,0,0,0.3)", pointerEvents:"none" }}>
                       <div style={{ position:"absolute", right:"100%", top:"50%", transform:"translateY(-50%)", borderWidth:"5px", borderStyle:"solid", borderColor:"transparent #1E293B transparent transparent" }} />
                       {item.tooltip}
                     </div>
@@ -119,25 +85,14 @@ const handleLogout = async () => {
                 </div>
               )
             }
-
             return (
               <div key={item.href} style={{ padding:"0.15rem 0.75rem" }}>
                 <Link href={item.href} style={{ textDecoration:"none" }}>
-                  <div style={{
-                    display:"flex", alignItems:"center", gap:"0.85rem",
-                    padding: collapsed?"0.75rem 0":"0.75rem 0.875rem",
-                    borderRadius:"10px",
-                    background: isActive?"rgba(200,16,46,0.18)":"transparent",
-                    color: isActive?"#FFFFFF":"rgba(255,255,255,0.5)",
-                    cursor:"pointer", transition:"all 0.2s",
-                    justifyContent: collapsed?"center":"flex-start",
-                    borderLeft: isActive?"3px solid var(--red)":"3px solid transparent",
-                  }}
-                  onMouseEnter={e => { if (!isActive){ e.currentTarget.style.background="rgba(255,255,255,0.06)"; e.currentTarget.style.color="rgba(255,255,255,0.8)" }}}
-                  onMouseLeave={e => { if (!isActive){ e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(255,255,255,0.5)" }}}
-                  >
+                  <div style={{ display:"flex", alignItems:"center", gap:"0.85rem", padding:collapsed?"0.75rem 0":"0.75rem 0.875rem", borderRadius:"10px", background:isActive?"rgba(200,16,46,0.18)":"transparent", color:isActive?"#FFFFFF":"rgba(255,255,255,0.5)", cursor:"pointer", transition:"all 0.2s", justifyContent:collapsed?"center":"flex-start", borderLeft:isActive?"3px solid var(--red)":"3px solid transparent" }}
+                    onMouseEnter={e => { if (!isActive){ e.currentTarget.style.background="rgba(255,255,255,0.06)"; e.currentTarget.style.color="rgba(255,255,255,0.8)" }}}
+                    onMouseLeave={e => { if (!isActive){ e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(255,255,255,0.5)" }}}>
                     {item.icon}
-                    {!collapsed && <span style={{ fontSize:"0.88rem", fontWeight: isActive?600:400, whiteSpace:"nowrap" }}>{item.label}</span>}
+                    {!collapsed && <span style={{ fontSize:"0.88rem", fontWeight:isActive?600:400, whiteSpace:"nowrap" }}>{item.label}</span>}
                   </div>
                 </Link>
               </div>
@@ -162,7 +117,6 @@ const handleLogout = async () => {
         </div>
       </aside>
 
-      {/* ── MAIN ── */}
       <main style={{ flex:1, marginLeft:collapsed?"72px":"240px", transition:"margin-left 0.3s cubic-bezier(0.4,0,0.2,1)", minHeight:"100vh", background:"var(--gray-bg)" }}>
         <header style={{ height:"60px", background:"#FFF", borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"flex-end", padding:"0 2rem", position:"sticky", top:0, zIndex:50, boxShadow:"0 1px 8px rgba(15,31,61,0.06)" }}>
           <div style={{ display:"flex", alignItems:"center", gap:"0.75rem" }}>
@@ -179,8 +133,7 @@ const handleLogout = async () => {
           {children}
         </div>
       </main>
-
-      <style>{`@keyframes fadeIn { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }`}</style>
+      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
   )
 }

@@ -5,9 +5,9 @@ const FORM_EMPTY = { rfc:"", nombre:"", apellido_paterno:"", apellido_materno:""
 
 const validators = {
   rfc:              v => /^[A-Z0-9]{0,13}$/.test(v),
-  nombre:           v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/.test(v),
-  apellido_paterno: v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/.test(v),
-  apellido_materno: v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/.test(v),
+  nombre:           v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{0,50}$/.test(v),
+  apellido_paterno: v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{0,50}$/.test(v),
+  apellido_materno: v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{0,50}$/.test(v),
   telefono:         v => /^\d{0,10}$/.test(v),
   correo:           () => true,
 }
@@ -16,7 +16,10 @@ const validateRequired = (form) => {
   const errors = {}
   if (!form.rfc || form.rfc.length < 12)            errors.rfc = "RFC debe tener entre 12 y 13 caracteres"
   if (!form.nombre)                                  errors.nombre = "El nombre es requerido"
+  if (form.nombre?.length > 50)                      errors.nombre = "Máximo 50 caracteres"
   if (!form.apellido_paterno)                        errors.apellido_paterno = "El apellido paterno es requerido"
+  if (form.apellido_paterno?.length > 50)            errors.apellido_paterno = "Máximo 50 caracteres"
+  if (form.apellido_materno?.length > 50)            errors.apellido_materno = "Máximo 50 caracteres"
   if (form.telefono && form.telefono.length !== 10)  errors.telefono = "El teléfono debe tener 10 dígitos"
   if (form.correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) errors.correo = "Correo inválido"
   return errors
@@ -47,9 +50,9 @@ function FormField({ label, required, error, hint, children }) {
 }
 
 function ClienteModal({ cliente, onClose, onSave, existingRfcs }) {
-  const [form, setForm]     = useState(cliente || FORM_EMPTY)
-  const [errors, setErrors] = useState({})
-  const [saving, setSaving] = useState(false)
+  const [form, setForm]         = useState(cliente || FORM_EMPTY)
+  const [errors, setErrors]     = useState({})
+  const [saving, setSaving]     = useState(false)
   const [apiError, setApiError] = useState("")
   const isEdit = !!cliente
 
@@ -64,7 +67,6 @@ function ClienteModal({ cliente, onClose, onSave, existingRfcs }) {
     const errs = validateRequired(form)
     if (!isEdit && existingRfcs.includes(form.rfc)) errs.rfc = "Este RFC ya está registrado"
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
-
     setSaving(true)
     setApiError("")
     try {
@@ -98,11 +100,8 @@ function ClienteModal({ cliente, onClose, onSave, existingRfcs }) {
           </button>
         </div>
         <div style={{ height:"3px", background:"var(--red)" }} />
-
         <div style={{ padding:"1.75rem" }}>
-          {apiError && (
-            <div style={{ background:"#FFF0F2", border:"1px solid var(--red)", borderRadius:"10px", padding:"0.75rem 1rem", color:"var(--red)", fontSize:"0.85rem", marginBottom:"1rem" }}>{apiError}</div>
-          )}
+          {apiError && <div style={{ background:"#FFF0F2", border:"1px solid var(--red)", borderRadius:"10px", padding:"0.75rem 1rem", color:"var(--red)", fontSize:"0.85rem", marginBottom:"1rem" }}>{apiError}</div>}
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 1.25rem" }}>
             <div style={{ gridColumn:"1/-1" }}>
               <FormField label="RFC" required error={errors.rfc} hint="Formato: XXXX000000XX0 (12-13 caracteres)">
@@ -113,26 +112,33 @@ function ClienteModal({ cliente, onClose, onSave, existingRfcs }) {
               </FormField>
             </div>
             <FormField label="Nombre(s)" required error={errors.nombre}>
-              <input value={form.nombre} onChange={e => handleChange("nombre", e.target.value)} placeholder="Nombre(s)" style={inputStyle(!!errors.nombre)} />
+              <input value={form.nombre} onChange={e => handleChange("nombre", e.target.value)}
+                placeholder="Nombre(s)" maxLength={50} style={inputStyle(!!errors.nombre)} />
+              {!errors.nombre && <p style={{ fontSize:"0.68rem", color: form.nombre?.length >= 45 ? "var(--red)" : "#9CA3AF", marginTop:"0.3rem" }}>{form.nombre?.length || 0}/50</p>}
             </FormField>
             <FormField label="Apellido Paterno" required error={errors.apellido_paterno}>
-              <input value={form.apellido_paterno} onChange={e => handleChange("apellido_paterno", e.target.value)} placeholder="Apellido paterno" style={inputStyle(!!errors.apellido_paterno)} />
+              <input value={form.apellido_paterno} onChange={e => handleChange("apellido_paterno", e.target.value)}
+                placeholder="Apellido paterno" maxLength={50} style={inputStyle(!!errors.apellido_paterno)} />
+              {!errors.apellido_paterno && <p style={{ fontSize:"0.68rem", color: form.apellido_paterno?.length >= 45 ? "var(--red)" : "#9CA3AF", marginTop:"0.3rem" }}>{form.apellido_paterno?.length || 0}/50</p>}
             </FormField>
             <FormField label="Apellido Materno" error={errors.apellido_materno}>
-              <input value={form.apellido_materno} onChange={e => handleChange("apellido_materno", e.target.value)} placeholder="Apellido materno" style={inputStyle(!!errors.apellido_materno)} />
+              <input value={form.apellido_materno} onChange={e => handleChange("apellido_materno", e.target.value)}
+                placeholder="Apellido materno" maxLength={50} style={inputStyle(!!errors.apellido_materno)} />
+              {!errors.apellido_materno && <p style={{ fontSize:"0.68rem", color: form.apellido_materno?.length >= 45 ? "var(--red)" : "#9CA3AF", marginTop:"0.3rem" }}>{form.apellido_materno?.length || 0}/50</p>}
             </FormField>
             <FormField label="Teléfono" error={errors.telefono} hint="10 dígitos">
-              <input value={form.telefono} onChange={e => handleChange("telefono", e.target.value)} placeholder="6691234567" maxLength={10} inputMode="numeric" style={inputStyle(!!errors.telefono)} />
+              <input value={form.telefono} onChange={e => handleChange("telefono", e.target.value)}
+                placeholder="6691234567" maxLength={10} inputMode="numeric" style={inputStyle(!!errors.telefono)} />
               {!errors.telefono && form.telefono && <p style={{ fontSize:"0.68rem", color:form.telefono.length===10?"#15803D":"#9CA3AF", marginTop:"0.3rem" }}>{form.telefono.length}/10</p>}
             </FormField>
             <div style={{ gridColumn:"1/-1" }}>
               <FormField label="Correo" error={errors.correo}>
-                <input type="email" value={form.correo} onChange={e => handleChange("correo", e.target.value)} placeholder="correo@ejemplo.com" style={inputStyle(!!errors.correo)} />
+                <input type="email" value={form.correo} onChange={e => handleChange("correo", e.target.value)}
+                  placeholder="correo@ejemplo.com" style={inputStyle(!!errors.correo)} />
               </FormField>
             </div>
           </div>
         </div>
-
         <div style={{ padding:"1.25rem 1.75rem", borderTop:"1px solid var(--border)", background:"#FAFAFA", display:"flex", justifyContent:"flex-end", gap:"0.75rem" }}>
           <button onClick={onClose} style={{ padding:"0.75rem 1.5rem", border:"2px solid var(--border)", borderRadius:"10px", background:"#fff", color:"var(--navy)", fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.82rem", fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", cursor:"pointer" }}>CANCELAR</button>
           <button onClick={handleSave} disabled={saving} style={{ padding:"0.75rem 1.75rem", background:saving?"#9CA3AF":"var(--red)", border:"none", borderRadius:"10px", color:"#fff", fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.82rem", fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", cursor:saving?"not-allowed":"pointer" }}>
@@ -140,10 +146,7 @@ function ClienteModal({ cliente, onClose, onSave, existingRfcs }) {
           </button>
         </div>
       </div>
-      <style>{`
-        @keyframes fadeIn  { from { opacity:0 } to { opacity:1 } }
-        @keyframes modalIn { from { transform:scale(0.93) translateY(12px); opacity:0 } to { transform:scale(1) translateY(0); opacity:1 } }
-      `}</style>
+      <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes modalIn{from{transform:scale(0.93) translateY(12px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}`}</style>
     </div>
   )
 }
@@ -162,7 +165,7 @@ export default function ClientesPage() {
       const res  = await fetch("/api/clientes")
       const data = await res.json()
       setClientes(data)
-    } catch { /* error silencioso */ }
+    } catch { /* silencioso */ }
     finally { setLoading(false) }
   }
 
@@ -281,11 +284,7 @@ export default function ClientesPage() {
           </div>
         </div>
       )}
-      <style>{`
-        @keyframes fadeIn  { from { opacity:0 } to { opacity:1 } }
-        @keyframes modalIn { from { transform:scale(0.93) translateY(12px); opacity:0 } to { transform:scale(1) translateY(0); opacity:1 } }
-        @keyframes spin    { to { transform:rotate(360deg) } }
-      `}</style>
+      <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes modalIn{from{transform:scale(0.93) translateY(12px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </>
   )
 }
