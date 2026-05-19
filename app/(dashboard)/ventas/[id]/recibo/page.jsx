@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation"
 
 const LADO_LABELS  = { izquierdo:"Izq", derecho:"Der", central:"Cen", NA:"N/A" }
 const METODO_LABEL = { efectivo:"Efectivo", tarjeta:"Tarjeta", transferencia:"Transferencia" }
-const METODO_ICON  = { efectivo:"💵", tarjeta:"💳", transferencia:"🏦" }
+
+const F = "'Courier New', Courier, monospace"
+const DASH = "- - - - - - - - - - - - - - - - - - - -"
 
 export default function ReciboVentaPage({ params }) {
   const router = useRouter()
@@ -36,13 +38,20 @@ export default function ReciboVentaPage({ params }) {
     </div>
   )
 
-  const fechaVenta = new Date(venta.fecha_venta).toLocaleDateString("es-MX", { day:"2-digit", month:"long", year:"numeric" })
-  const horaVenta  = new Date(venta.fecha_venta).toLocaleTimeString("es-MX", { hour:"2-digit", minute:"2-digit" })
+  const fechaVenta = new Date(venta.fecha_venta).toLocaleDateString("es-MX", { day:"2-digit", month:"2-digit", year:"numeric" })
+  const horaVenta  = new Date(venta.fecha_venta).toLocaleTimeString("es-MX", { hour:"2-digit", minute:"2-digit", second:"2-digit" })
   const base       = venta.subtotal + venta.mano_obra
+  const nombreCliente = [venta.cliente.nombre, venta.cliente.apellido_paterno, venta.cliente.apellido_materno].filter(Boolean).join(" ")
+
+  const pad = (str, len, right) => {
+    const s = String(str)
+    if (right) return s.length >= len ? s : " ".repeat(len - s.length) + s
+    return s.length >= len ? s : s + " ".repeat(len - s.length)
+  }
 
   return (
     <>
-      {/* Toolbar - hidden on print */}
+      {/* Toolbar */}
       <div className="no-print" style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1.5rem" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"1rem" }}>
           <button onClick={() => router.push("/ordenes")} style={{ width:"38px", height:"38px", border:"2px solid var(--border)", borderRadius:"10px", background:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--navy)" }}>
@@ -66,140 +75,127 @@ export default function ReciboVentaPage({ params }) {
         </div>
       </div>
 
-      {/* Receipt */}
-      <div id="recibo" style={{ maxWidth:"800px", margin:"0 auto", background:"#fff", borderRadius:"16px", border:"1px solid var(--border)", overflow:"hidden", boxShadow:"0 4px 24px rgba(15,31,61,0.08)" }}>
+      {/* Ticket Receipt */}
+      <div id="recibo" style={{ width:"80mm", margin:"0 auto", background:"#fff", padding:"8mm 6mm", fontFamily:F, fontSize:"12px", lineHeight:"1.5", color:"#000", border:"1px dashed #ccc", boxShadow:"0 2px 16px rgba(0,0,0,0.08)" }}>
 
         {/* Header */}
-        <div style={{ background:"var(--navy)", padding:"2rem 2.5rem", textAlign:"center", position:"relative" }}>
-          <div style={{ height:"3px", background:"var(--red)", position:"absolute", top:0, left:0, right:0 }} />
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"0.75rem", marginBottom:"0.5rem" }}>
-            <div style={{ width:"40px", height:"40px", background:"var(--red)", borderRadius:"10px", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-            </div>
-            <div>
-              <p style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"1.3rem", fontWeight:800, color:"#fff", letterSpacing:"0.1em" }}>TALLER MECÁNICO</p>
-              <p style={{ fontSize:"0.65rem", color:"rgba(255,255,255,0.4)", letterSpacing:"0.18em" }}>SISTEMA DE GESTIÓN</p>
-            </div>
-          </div>
-          <div style={{ marginTop:"1rem", padding:"0.6rem 1.5rem", background:"rgba(200,16,46,0.2)", borderRadius:"8px", display:"inline-block" }}>
-            <p style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"1rem", fontWeight:700, color:"#fff", letterSpacing:"0.12em" }}>RECIBO DE VENTA</p>
-          </div>
+        <div style={{ textAlign:"center", marginBottom:"2mm" }}>
+          <p style={{ fontSize:"18px", fontWeight:"bold", letterSpacing:"2px" }}>TALLER MECANICO</p>
+          <p style={{ fontSize:"10px", letterSpacing:"1px" }}>SISTEMA DE GESTION</p>
+          <p style={{ fontSize:"10px", marginTop:"2mm" }}>RFC: XAXX010101000</p>
+          <p style={{ fontSize:"9px", marginTop:"1mm", color:"#555" }}>{DASH}</p>
+          <p style={{ fontSize:"14px", fontWeight:"bold", marginTop:"1mm" }}>RECIBO DE VENTA</p>
+          <p style={{ fontSize:"9px", color:"#555" }}>{DASH}</p>
         </div>
 
         {/* Folio + Fecha */}
-        <div style={{ display:"flex", justifyContent:"space-between", padding:"1.25rem 2.5rem", background:"#F9FAFB", borderBottom:"1px solid var(--border)" }}>
-          <div>
-            <span style={{ fontSize:"0.68rem", fontWeight:700, color:"#9CA3AF", letterSpacing:"0.1em", textTransform:"uppercase", fontFamily:"'Barlow Condensed',sans-serif" }}>Folio</span>
-            <p style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"1.2rem", fontWeight:800, color:"var(--red)" }}>V-{String(venta.id_venta).padStart(4,"0")}</p>
+        <div style={{ marginBottom:"3mm" }}>
+          <div style={{ display:"flex", justifyContent:"space-between" }}>
+            <span>Folio:</span>
+            <span style={{ fontWeight:"bold" }}>V-{String(venta.id_venta).padStart(4,"0")}</span>
           </div>
-          <div style={{ textAlign:"center" }}>
-            <span style={{ fontSize:"0.68rem", fontWeight:700, color:"#9CA3AF", letterSpacing:"0.1em", textTransform:"uppercase", fontFamily:"'Barlow Condensed',sans-serif" }}>Orden</span>
-            <p style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"1.2rem", fontWeight:800, color:"var(--navy)" }}>#{String(venta.id_orden).padStart(4,"0")}</p>
+          <div style={{ display:"flex", justifyContent:"space-between" }}>
+            <span>Orden:</span>
+            <span style={{ fontWeight:"bold" }}>#{String(venta.id_orden).padStart(4,"0")}</span>
           </div>
-          <div style={{ textAlign:"right" }}>
-            <span style={{ fontSize:"0.68rem", fontWeight:700, color:"#9CA3AF", letterSpacing:"0.1em", textTransform:"uppercase", fontFamily:"'Barlow Condensed',sans-serif" }}>Fecha</span>
-            <p style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"1rem", fontWeight:700, color:"var(--navy)" }}>{fechaVenta}</p>
-            <p style={{ fontSize:"0.78rem", color:"#6B7280" }}>{horaVenta}</p>
+          <div style={{ display:"flex", justifyContent:"space-between" }}>
+            <span>Fecha:</span>
+            <span>{fechaVenta} {horaVenta}</span>
           </div>
         </div>
 
-        <div style={{ padding:"2rem 2.5rem" }}>
-          {/* Cliente + Vehículo */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1.25rem", marginBottom:"2rem" }}>
-            <div style={{ padding:"1rem 1.25rem", border:"1px solid var(--border)", borderRadius:"12px", background:"#FAFBFC" }}>
-              <p style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.7rem", fontWeight:700, color:"var(--red)", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"0.6rem" }}>CLIENTE</p>
-              <p style={{ fontWeight:700, fontSize:"0.95rem", color:"var(--navy)" }}>{venta.cliente.nombre} {venta.cliente.apellido_paterno} {venta.cliente.apellido_materno || ""}</p>
-              <p style={{ fontSize:"0.78rem", color:"#6B7280", fontFamily:"monospace", marginTop:"0.25rem" }}>RFC: {venta.cliente.rfc}</p>
-              {venta.cliente.telefono && <p style={{ fontSize:"0.78rem", color:"#6B7280", marginTop:"0.15rem" }}>Tel: {venta.cliente.telefono}</p>}
-              {venta.cliente.correo && <p style={{ fontSize:"0.78rem", color:"#6B7280", marginTop:"0.15rem" }}>{venta.cliente.correo}</p>}
-            </div>
-            <div style={{ padding:"1rem 1.25rem", border:"1px solid var(--border)", borderRadius:"12px", background:"#FAFBFC" }}>
-              <p style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.7rem", fontWeight:700, color:"var(--red)", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"0.6rem" }}>VEHÍCULO</p>
-              <p style={{ fontWeight:700, fontSize:"0.95rem", color:"var(--navy)" }}>{venta.vehiculo.marca} {venta.vehiculo.modelo}</p>
-              <p style={{ fontSize:"0.78rem", color:"#6B7280", marginTop:"0.25rem" }}>Año: {venta.vehiculo.anio} {venta.vehiculo.color ? `· ${venta.vehiculo.color}` : ""}</p>
-              <div style={{ marginTop:"0.5rem", display:"inline-block", padding:"0.25rem 0.6rem", background:"var(--navy)", borderRadius:"6px" }}>
-                <span style={{ fontFamily:"monospace", fontSize:"0.8rem", color:"#fff", fontWeight:700, letterSpacing:"0.1em" }}>{venta.vehiculo.placas}</span>
-              </div>
-            </div>
-          </div>
+        <p style={{ fontSize:"9px", color:"#555", textAlign:"center" }}>{DASH}</p>
 
-          {/* Tabla de Refacciones */}
-          <div style={{ marginBottom:"2rem" }}>
-            <p style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.7rem", fontWeight:700, color:"var(--red)", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"0.75rem" }}>REFACCIONES Y PIEZAS</p>
-            <table style={{ width:"100%", borderCollapse:"collapse", border:"1px solid var(--border)", borderRadius:"10px", overflow:"hidden" }}>
-              <thead>
-                <tr style={{ background:"var(--navy)" }}>
-                  {["#","Refacción","Lado","Cant.","P. Unitario","Subtotal"].map(col => (
-                    <th key={col} style={{ padding:"0.7rem 1rem", textAlign:col==="Cant."||col==="P. Unitario"||col==="Subtotal"?"right":"left", fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.7rem", fontWeight:700, color:"rgba(255,255,255,0.8)", letterSpacing:"0.1em", textTransform:"uppercase" }}>{col}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {venta.refacciones.map((r, i) => (
-                  <tr key={r.id_refaccion} style={{ borderTop:"1px solid var(--border)", background:i % 2 === 0 ? "#fff" : "#FAFBFC" }}>
-                    <td style={{ padding:"0.65rem 1rem", fontSize:"0.8rem", color:"#9CA3AF", fontWeight:600 }}>{i + 1}</td>
-                    <td style={{ padding:"0.65rem 1rem", fontSize:"0.88rem", fontWeight:600, color:"var(--navy)" }}>{r.nombre}</td>
-                    <td style={{ padding:"0.65rem 1rem", fontSize:"0.78rem", color:"#6B7280" }}>{LADO_LABELS[r.lado]}</td>
-                    <td style={{ padding:"0.65rem 1rem", textAlign:"right", fontWeight:700, color:"var(--navy)" }}>{r.cantidad}</td>
-                    <td style={{ padding:"0.65rem 1rem", textAlign:"right", color:"#4B5563" }}>${r.precio_unitario.toFixed(2)}</td>
-                    <td style={{ padding:"0.65rem 1rem", textAlign:"right", fontWeight:700, color:"var(--navy)" }}>${(r.precio_unitario * r.cantidad).toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {/* Cliente */}
+        <div style={{ marginBottom:"3mm", marginTop:"2mm" }}>
+          <p style={{ fontWeight:"bold", fontSize:"11px", marginBottom:"1mm" }}>CLIENTE</p>
+          <p>{nombreCliente}</p>
+          <p>RFC: {venta.cliente.rfc}</p>
+          {venta.cliente.telefono && <p>Tel: {venta.cliente.telefono}</p>}
+        </div>
 
-          {/* Resumen Financiero */}
-          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:"2rem" }}>
-            <div style={{ width:"320px" }}>
-              {[
-                { label:"Subtotal refacciones", value:`$${venta.subtotal.toFixed(2)}` },
-                { label:"Mano de obra", value:`$${venta.mano_obra.toFixed(2)}` },
-                { label:"Base", value:`$${base.toFixed(2)}`, bold:true, border:true },
-                { label:"IVA (16%)", value:venta.iva > 0 ? `$${venta.iva.toFixed(2)}` : "—" },
-              ].map(row => (
-                <div key={row.label} style={{ display:"flex", justifyContent:"space-between", padding:"0.5rem 0", borderTop:row.border ? "1px solid var(--border)" : "none" }}>
-                  <span style={{ fontSize:"0.85rem", color:row.bold ? "var(--navy)" : "#6B7280", fontWeight:row.bold ? 700 : 400 }}>{row.label}</span>
-                  <span style={{ fontSize:"0.85rem", fontWeight:row.bold ? 700 : 500, color:row.bold ? "var(--navy)" : "#4B5563" }}>{row.value}</span>
-                </div>
-              ))}
-              <div style={{ marginTop:"0.75rem", padding:"1rem 1.25rem", background:"var(--navy)", borderRadius:"10px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.85rem", fontWeight:700, color:"rgba(255,255,255,0.7)", letterSpacing:"0.1em" }}>TOTAL</span>
-                <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"1.5rem", fontWeight:800, color:"#fff" }}>${venta.precio_total.toFixed(2)} <span style={{ fontSize:"0.7rem", fontWeight:400, color:"rgba(255,255,255,0.5)" }}>MXN</span></span>
-              </div>
-            </div>
-          </div>
+        {/* Vehículo */}
+        <div style={{ marginBottom:"2mm" }}>
+          <p style={{ fontWeight:"bold", fontSize:"11px", marginBottom:"1mm" }}>VEHICULO</p>
+          <p>{venta.vehiculo.marca} {venta.vehiculo.modelo} {venta.vehiculo.anio}</p>
+          <p>Placas: {venta.vehiculo.placas}{venta.vehiculo.color ? `  Color: ${venta.vehiculo.color}` : ""}</p>
+        </div>
 
-          {/* Método de Pago + Estado */}
-          <div style={{ display:"flex", gap:"1rem", marginBottom:"2rem" }}>
-            <div style={{ flex:1, padding:"1rem 1.25rem", border:"1px solid var(--border)", borderRadius:"10px", background:"#F9FAFB", display:"flex", alignItems:"center", gap:"0.75rem" }}>
-              <span style={{ fontSize:"1.5rem" }}>{METODO_ICON[venta.metodo_pago]}</span>
-              <div>
-                <p style={{ fontSize:"0.68rem", fontWeight:700, color:"#9CA3AF", letterSpacing:"0.1em", textTransform:"uppercase", fontFamily:"'Barlow Condensed',sans-serif" }}>Método de pago</p>
-                <p style={{ fontWeight:700, color:"var(--navy)", fontSize:"0.95rem" }}>{METODO_LABEL[venta.metodo_pago]}</p>
-              </div>
-            </div>
-            <div style={{ flex:1, padding:"1rem 1.25rem", border:"1px solid #BBF7D0", borderRadius:"10px", background:"#F0FDF4", display:"flex", alignItems:"center", gap:"0.75rem" }}>
-              <div style={{ width:"32px", height:"32px", background:"#DCFCE7", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <div>
-                <p style={{ fontSize:"0.68rem", fontWeight:700, color:"#9CA3AF", letterSpacing:"0.1em", textTransform:"uppercase", fontFamily:"'Barlow Condensed',sans-serif" }}>Estado</p>
-                <p style={{ fontWeight:700, color:"#15803D", fontSize:"0.95rem" }}>Pagado</p>
-              </div>
-            </div>
-          </div>
+        <p style={{ fontSize:"9px", color:"#555", textAlign:"center" }}>{DASH}</p>
 
-          {/* Footer */}
-          <div style={{ borderTop:"2px solid var(--border)", paddingTop:"1.5rem", textAlign:"center" }}>
-            <p style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"1rem", fontWeight:700, color:"var(--navy)", letterSpacing:"0.05em" }}>¡Gracias por su preferencia!</p>
-            <p style={{ fontSize:"0.78rem", color:"#9CA3AF", marginTop:"0.3rem" }}>Conserve este recibo como comprobante de pago.</p>
-            <div style={{ marginTop:"1rem", display:"flex", justifyContent:"center", gap:"2rem", fontSize:"0.7rem", color:"#D1D5DB" }}>
-              <span>Folio: V-{String(venta.id_venta).padStart(4,"0")}</span>
-              <span>Orden: #{String(venta.id_orden).padStart(4,"0")}</span>
-              <span>Impreso: {new Date().toLocaleDateString("es-MX")} {new Date().toLocaleTimeString("es-MX", { hour:"2-digit", minute:"2-digit" })}</span>
-            </div>
+        {/* Items */}
+        <div style={{ marginTop:"2mm", marginBottom:"2mm" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", fontWeight:"bold", fontSize:"11px", borderBottom:"1px solid #000", paddingBottom:"1mm", marginBottom:"1mm" }}>
+            <span>DESCRIPCION</span>
+            <span>IMPORTE</span>
           </div>
+          {venta.refacciones.map((r, i) => (
+            <div key={r.id_refaccion} style={{ marginBottom:"2mm" }}>
+              <p style={{ fontWeight:"bold" }}>{r.nombre} <span style={{ fontWeight:"normal", fontSize:"10px" }}>({LADO_LABELS[r.lado]})</span></p>
+              <div style={{ display:"flex", justifyContent:"space-between", fontSize:"11px", color:"#333" }}>
+                <span>  {r.cantidad} x ${r.precio_unitario.toFixed(2)}</span>
+                <span style={{ fontWeight:"bold", color:"#000" }}>${(r.precio_unitario * r.cantidad).toFixed(2)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p style={{ fontSize:"9px", color:"#555", textAlign:"center" }}>{DASH}</p>
+
+        {/* Totals */}
+        <div style={{ marginTop:"2mm", marginBottom:"2mm" }}>
+          <div style={{ display:"flex", justifyContent:"space-between" }}>
+            <span>Subtotal:</span>
+            <span>${venta.subtotal.toFixed(2)}</span>
+          </div>
+          {venta.mano_obra > 0 && (
+            <div style={{ display:"flex", justifyContent:"space-between" }}>
+              <span>Mano de obra:</span>
+              <span>${venta.mano_obra.toFixed(2)}</span>
+            </div>
+          )}
+          {venta.iva > 0 && (
+            <>
+              <div style={{ display:"flex", justifyContent:"space-between" }}>
+                <span>Base:</span>
+                <span>${base.toFixed(2)}</span>
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between" }}>
+                <span>IVA (16%):</span>
+                <span>${venta.iva.toFixed(2)}</span>
+              </div>
+            </>
+          )}
+          <div style={{ display:"flex", justifyContent:"space-between", fontWeight:"bold", fontSize:"16px", borderTop:"2px solid #000", marginTop:"2mm", paddingTop:"2mm" }}>
+            <span>TOTAL:</span>
+            <span>${venta.precio_total.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <p style={{ fontSize:"9px", color:"#555", textAlign:"center" }}>{DASH}</p>
+
+        {/* Payment */}
+        <div style={{ marginTop:"2mm", marginBottom:"2mm" }}>
+          <div style={{ display:"flex", justifyContent:"space-between" }}>
+            <span>Metodo de pago:</span>
+            <span style={{ fontWeight:"bold" }}>{METODO_LABEL[venta.metodo_pago]}</span>
+          </div>
+          <div style={{ display:"flex", justifyContent:"space-between" }}>
+            <span>Estado:</span>
+            <span style={{ fontWeight:"bold" }}>PAGADO</span>
+          </div>
+        </div>
+
+        <p style={{ fontSize:"9px", color:"#555", textAlign:"center" }}>{DASH}</p>
+
+        {/* Footer */}
+        <div style={{ textAlign:"center", marginTop:"4mm" }}>
+          <p style={{ fontWeight:"bold", fontSize:"13px" }}>*** GRACIAS POR SU ***</p>
+          <p style={{ fontWeight:"bold", fontSize:"13px" }}>*** PREFERENCIA ***</p>
+          <p style={{ fontSize:"10px", marginTop:"3mm", color:"#555" }}>Conserve este ticket como</p>
+          <p style={{ fontSize:"10px", color:"#555" }}>comprobante de pago</p>
+          <p style={{ fontSize:"9px", marginTop:"4mm", color:"#999" }}>Impreso: {new Date().toLocaleDateString("es-MX")} {new Date().toLocaleTimeString("es-MX",{ hour:"2-digit", minute:"2-digit" })}</p>
+          <p style={{ fontSize:"9px", color:"#999" }}>Folio: V-{String(venta.id_venta).padStart(4,"0")} | Orden: #{String(venta.id_orden).padStart(4,"0")}</p>
         </div>
       </div>
 

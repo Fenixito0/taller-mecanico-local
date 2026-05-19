@@ -55,8 +55,11 @@ button { transition: all 0.2s ease; }
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
-    max-width: 100% !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 !important;
+    padding: 4mm 3mm !important;
   }
   body { background: #fff !important; }
-  @page { margin: 1cm; size: letter; }
+  @page { margin: 0; size: 80mm auto; }
 }
