@@ -24,12 +24,15 @@ export const authOptions = {
           "anonymous"
 
         // Verificar rate limit
-        const { success, remaining, reset } = await ratelimit.limit(ip)
-
-        if (!success) {
-          const resetDate = new Date(reset)
-          const minutos = Math.ceil((resetDate - new Date()) / 1000 / 60)
-          throw new Error(`Demasiados intentos. Intenta de nuevo en ${minutos} minuto${minutos !== 1 ? "s" : ""}.`)
+        try {
+          const { success, reset } = await ratelimit.limit(ip)
+          if (!success) {
+            const resetDate = new Date(reset)
+            const minutos = Math.ceil((resetDate - new Date()) / 1000 / 60)
+            throw new Error(`Demasiados intentos. Intenta de nuevo en ${minutos} minuto${minutos !== 1 ? "s" : ""}.`)
+          }
+        } catch (e) {
+          if (e.message.startsWith("Demasiados")) throw e
         }
 
         // Buscar usuario en la BD
