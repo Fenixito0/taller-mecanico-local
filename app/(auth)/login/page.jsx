@@ -28,7 +28,7 @@ if (result?.ok) {
   setError(result.error)
   setLoading(false)
 } else {
-  setError("Usuario o contraseña incorrectos.")
+  setError(`Error: ${result?.error || "desconocido"} | status: ${result?.status}`)
   setLoading(false)
 }
   }
