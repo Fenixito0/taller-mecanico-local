@@ -81,7 +81,6 @@ export default function CobrarVentaPage({ params }) {
       const data = await res.json()
       if (!res.ok) { setError(data.error || "Error al registrar la venta"); setProcessing(false); return }
       setSuccess(true)
-      setTimeout(() => router.push("/ordenes"), 2500)
     } catch {
       setError("Error de conexión")
       setProcessing(false)
@@ -97,7 +96,19 @@ export default function CobrarVentaPage({ params }) {
         <h2 style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"2rem", fontWeight:700, color:"var(--navy)", marginBottom:"0.5rem" }}>¡Venta Registrada!</h2>
         <p style={{ color:"#6B7280" }}>Total cobrado: <strong style={{ color:"var(--red)" }}>${total.toFixed(2)} MXN</strong></p>
         <p style={{ color:"#9CA3AF", fontSize:"0.82rem", marginTop:"0.3rem" }}>La orden fue marcada como <strong style={{ color:"#15803D" }}>Completada</strong></p>
-        <p style={{ color:"#D1D5DB", fontSize:"0.78rem", marginTop:"0.75rem" }}>Redirigiendo a órdenes...</p>
+        <div style={{ display:"flex", gap:"0.75rem", marginTop:"1.5rem", justifyContent:"center", flexWrap:"wrap" }}>
+          <button onClick={() => router.push(`/ventas/${id}/recibo`)} style={{ padding:"0.85rem 1.5rem", border:"none", borderRadius:"12px", background:"var(--red)", color:"#fff", cursor:"pointer", fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, fontSize:"0.9rem", letterSpacing:"0.1em", boxShadow:"0 4px 14px rgba(200,16,46,0.3)", display:"flex", alignItems:"center", gap:"0.5rem" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            VER RECIBO
+          </button>
+          <button onClick={() => { const a = document.createElement("a"); a.href = `/api/ordenes/${id}/excel`; a.download = ""; document.body.appendChild(a); a.click(); a.remove() }} style={{ padding:"0.85rem 1.5rem", border:"2px solid #15803D", borderRadius:"12px", background:"#F0FDF4", color:"#15803D", cursor:"pointer", fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, fontSize:"0.9rem", letterSpacing:"0.1em", display:"flex", alignItems:"center", gap:"0.5rem" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            DESCARGAR EXCEL
+          </button>
+          <button onClick={() => router.push("/ordenes")} style={{ padding:"0.85rem 1.5rem", border:"2px solid var(--border)", borderRadius:"12px", background:"#fff", color:"var(--navy)", cursor:"pointer", fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, fontSize:"0.9rem", letterSpacing:"0.1em" }}>
+            VOLVER A ÓRDENES
+          </button>
+        </div>
       </div>
       <style>{`@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
     </div>

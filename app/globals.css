@@ -41,3 +41,22 @@ input:focus, select:focus, textarea:focus {
 }
 
 button { transition: all 0.2s ease; }
+
+@media print {
+  .no-print { display: none !important; }
+  aside, header { display: none !important; }
+  main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  main > div { padding: 0 !important; }
+  #recibo {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+  }
+  body { background: #fff !important; }
+  @page { margin: 1cm; size: letter; }
+}
