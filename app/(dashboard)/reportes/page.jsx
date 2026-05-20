@@ -120,7 +120,7 @@ export default function ReportesPage() {
 }
 
 function OrdenesReport({ data, desde, hasta }) {
-  if (!data?.resumen) return null
+  if (!data?.resumen || !data?.ordenes) return null
   const { resumen, ordenes } = data
   return (
     <>
@@ -175,8 +175,9 @@ function OrdenesReport({ data, desde, hasta }) {
 }
 
 function IngresosReport({ data, desde, hasta }) {
-  if (!data?.resumen) return null
-  const { resumen, top_refacciones, ventas } = data
+  if (!data?.resumen || !data?.ventas) return null
+  const { resumen, ventas } = data
+  const top_refacciones = data.top_refacciones || []
   return (
     <>
       <div id="recibo" style={{ background:"transparent" }}>
