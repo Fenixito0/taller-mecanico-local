@@ -51,6 +51,7 @@ export default function ReportesPage() {
 
   const fetchData = () => {
     setLoading(true)
+    setData(null)
     const url = tab === "ordenes"
       ? `/api/reportes/ordenes?desde=${desde}&hasta=${hasta}`
       : `/api/reportes/ventas?desde=${desde}&hasta=${hasta}`
@@ -191,8 +192,8 @@ function IngresosReport({ data, desde, hasta }) {
         <div style={{ display:"flex", gap:"1rem", marginBottom:"1.5rem", flexWrap:"wrap" }}>
           {["efectivo","tarjeta","transferencia"].map(m => {
             const icons = { efectivo:"💵", tarjeta:"💳", transferencia:"🏦" }
-            const total = resumen.por_metodo[m] || 0
-            const count = resumen.conteo_metodo[m] || 0
+            const total = resumen.por_metodo?.[m] || 0
+            const count = resumen.conteo_metodo?.[m] || 0
             const pct = resumen.total_ingresos > 0 ? ((total / resumen.total_ingresos) * 100).toFixed(0) : 0
             return (
               <div key={m} style={{ flex:1, minWidth:"180px", background:"#fff", borderRadius:"14px", border:"1px solid var(--border)", padding:"1rem 1.25rem", boxShadow:"0 2px 12px rgba(15,31,61,0.05)" }}>
