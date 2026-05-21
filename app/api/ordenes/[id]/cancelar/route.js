@@ -11,7 +11,10 @@ export async function PATCH(_, { params }) {
     const { id: rawId } = await params
     const id = Number(rawId)
 
-    const orden = await prisma.ordenServicio.findUnique({ where: { id_orden: id } })
+    const orden = await prisma.ordenServicio.findUnique({
+      where: { id_orden: id },
+      include: { detalles: true },
+    })
 
     if (!orden)
       return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 })
@@ -19,9 +22,11 @@ export async function PATCH(_, { params }) {
     if (orden.estado !== "pendiente")
       return NextResponse.json({ error: "Solo se pueden cancelar órdenes pendientes" }, { status: 409 })
 
-    await prisma.ordenServicio.update({
-      where: { id_orden: id },
-      data:  { estado: "cancelado" },
+    await prisma.$transaction(async (tx) => {
+      for (const d of orden.detalles) {
+        await tx.refaccion.update({ where: { id_refaccion: d.id_refaccion }, data: { stock: { increment: d.cantidad } } })
+      }
+      await tx.ordenServicio.update({ where: { id_orden: id }, data: { estado: "cancelado" } })
     })
 
     await registrarAuditoria(`Canceló orden #${id}`, "ordenes")

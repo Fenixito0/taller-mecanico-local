@@ -219,24 +219,27 @@ export default function NuevaOrdenPage() {
                     {filteredRefacciones.map(r => {
                       const sel = refacciones.find(s => s.id_refaccion===r.id_refaccion)
                       const ls  = LADO_COLORS[r.lado]||LADO_COLORS.NA
+                      const sinStock = (r.stock ?? 0) <= 0 && !sel
                       return (
-                        <div key={r.id_refaccion} style={{ padding:"0.9rem 1.1rem", borderRadius:"10px", border:`2px solid ${sel?"var(--red)":"var(--border)"}`, background:sel?"#FFF0F2":"#FAFAFA", transition:"all 0.15s", display:"flex", alignItems:"center", gap:"1rem" }}>
-                          <div onClick={() => toggleRefaccion(r)} style={{ width:"22px", height:"22px", borderRadius:"6px", flexShrink:0, border:`2px solid ${sel?"var(--red)":"#D1D5DB"}`, background:sel?"var(--red)":"#fff", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all 0.15s" }}>
+                        <div key={r.id_refaccion} style={{ padding:"0.9rem 1.1rem", borderRadius:"10px", border:`2px solid ${sel?"var(--red)":sinStock?"#E5E7EB":"var(--border)"}`, background:sel?"#FFF0F2":sinStock?"#F3F4F6":"#FAFAFA", transition:"all 0.15s", display:"flex", alignItems:"center", gap:"1rem", opacity:sinStock?0.5:1 }}>
+                          <div onClick={() => !sinStock && toggleRefaccion(r)} style={{ width:"22px", height:"22px", borderRadius:"6px", flexShrink:0, border:`2px solid ${sel?"var(--red)":"#D1D5DB"}`, background:sel?"var(--red)":"#fff", display:"flex", alignItems:"center", justifyContent:"center", cursor:sinStock?"not-allowed":"pointer", transition:"all 0.15s" }}>
                             {sel&&<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
                           </div>
-                          <div style={{ flex:1, cursor:"pointer" }} onClick={() => toggleRefaccion(r)}>
+                          <div style={{ flex:1, cursor:sinStock?"not-allowed":"pointer" }} onClick={() => !sinStock && toggleRefaccion(r)}>
                             <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
-                              <span style={{ fontWeight:600, fontSize:"0.9rem", color:"var(--navy)" }}>{r.nombre}</span>
+                              <span style={{ fontWeight:600, fontSize:"0.9rem", color:sinStock?"#9CA3AF":"var(--navy)" }}>{r.nombre}</span>
                               <span style={{ background:ls.bg, color:ls.color, border:`1px solid ${ls.border}`, padding:"0.1rem 0.5rem", borderRadius:"4px", fontSize:"0.68rem", fontWeight:700 }}>{LADO_LABELS[r.lado]}</span>
+                              {sinStock && <span style={{ background:"#FFF0F2", color:"#C8102E", border:"1px solid #FECDD3", padding:"0.1rem 0.5rem", borderRadius:"4px", fontSize:"0.65rem", fontWeight:700 }}>SIN STOCK</span>}
+                              {!sinStock && <span style={{ fontSize:"0.68rem", color:"#9CA3AF" }}>({r.stock ?? 0} disp.)</span>}
                             </div>
                             {r.descripcion&&<p style={{ fontSize:"0.78rem", color:"#9CA3AF", marginTop:"0.1rem" }}>{r.descripcion}</p>}
                           </div>
-                          <span style={{ fontWeight:700, color:"var(--navy)", fontSize:"0.9rem", whiteSpace:"nowrap" }}>${Number(r.precio_unitario).toFixed(2)}</span>
+                          <span style={{ fontWeight:700, color:sinStock?"#9CA3AF":"var(--navy)", fontSize:"0.9rem", whiteSpace:"nowrap" }}>${Number(r.precio_unitario).toFixed(2)}</span>
                           {sel&&(
                             <div style={{ display:"flex", alignItems:"center", gap:"0.4rem", flexShrink:0 }} onClick={e => e.stopPropagation()}>
                               <button onClick={() => setCantidad(r.id_refaccion,Math.max(1,sel.cantidad-1))} style={{ width:"28px", height:"28px", border:"2px solid var(--border)", borderRadius:"7px", background:"#fff", color:"var(--navy)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontWeight:700 }}>−</button>
                               <span style={{ width:"28px", textAlign:"center", fontWeight:700, color:"var(--navy)" }}>{sel.cantidad}</span>
-                              <button onClick={() => setCantidad(r.id_refaccion,sel.cantidad+1)} style={{ width:"28px", height:"28px", border:"2px solid var(--border)", borderRadius:"7px", background:"#fff", color:"var(--navy)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontWeight:700 }}>+</button>
+                              <button onClick={() => setCantidad(r.id_refaccion,Math.min(r.stock ?? 1,sel.cantidad+1))} style={{ width:"28px", height:"28px", border:"2px solid var(--border)", borderRadius:"7px", background:"#fff", color:"var(--navy)", display:"flex", alignItems:"center", justifyContent:"center", cursor:sel.cantidad>=(r.stock??1)?"not-allowed":"pointer", fontWeight:700, opacity:sel.cantidad>=(r.stock??1)?0.4:1 }}>+</button>
                             </div>
                           )}
                         </div>

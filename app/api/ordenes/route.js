@@ -43,6 +43,12 @@ export async function POST(req) {
     if (!id_vehiculo || !rfc_cliente || !refacciones?.length)
       return NextResponse.json({ error: "Vehículo, cliente y al menos una refacción son requeridos" }, { status: 400 })
     const orden = await prisma.$transaction(async (tx) => {
+      for (const r of refacciones) {
+        const ref = await tx.refaccion.findUnique({ where: { id_refaccion: Number(r.id_refaccion) } })
+        if (!ref) throw new Error(`Refacción ${r.id_refaccion} no encontrada`)
+        if (ref.stock < Number(r.cantidad)) throw new Error(`Stock insuficiente para "${ref.nombre}" (disponible: ${ref.stock}, solicitado: ${r.cantidad})`)
+        await tx.refaccion.update({ where: { id_refaccion: ref.id_refaccion }, data: { stock: { decrement: Number(r.cantidad) } } })
+      }
       const o = await tx.ordenServicio.create({
         data: { id_vehiculo: Number(id_vehiculo), rfc_cliente, id_usuario: id_usuario ? Number(id_usuario) : null, observaciones: observaciones || null, estado: "pendiente" },
       })
@@ -56,7 +62,10 @@ export async function POST(req) {
     })
     await registrarAuditoria(`Generó orden #${orden.id_orden} para cliente RFC: ${rfc_cliente}`, "ordenes")
     return NextResponse.json(orden, { status: 201 })
-  } catch {
+  } catch (e) {
+    const msg = e.message || ""
+    if (msg.startsWith("Stock insuficiente") || msg.includes("no encontrada"))
+      return NextResponse.json({ error: msg }, { status: 400 })
     return NextResponse.json({ error: "Error al crear orden" }, { status: 500 })
   }
 }
