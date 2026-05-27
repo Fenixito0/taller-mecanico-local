@@ -19,11 +19,11 @@ export async function POST(req) {
   if (check) return check
   try {
     const body = await req.json()
-    const { nombre, descripcion, lado, precio_unitario, stock } = body
+    const { nombre, descripcion, lado, precio_unitario } = body
     if (!nombre || precio_unitario === undefined)
       return NextResponse.json({ error: "Nombre y precio son requeridos" }, { status: 400 })
     const refaccion = await prisma.refaccion.create({
-      data: { nombre, descripcion, lado: lado || "NA", precio_unitario: parseFloat(precio_unitario), stock: stock != null ? Number(stock) : 0 },
+      data: { nombre, descripcion, lado: lado || "NA", precio_unitario: parseFloat(precio_unitario), stock: 1 },
     })
     await registrarAuditoria(`Agregó refacción al catálogo: ${nombre}`, "refacciones")
     return NextResponse.json(refaccion, { status: 201 })

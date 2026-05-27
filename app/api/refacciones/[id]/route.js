@@ -10,10 +10,10 @@ export async function PUT(req, { params }) {
     const { id: rawId } = await params
     const id = Number(rawId)
     const body = await req.json()
-    const { nombre, descripcion, lado, precio_unitario, stock } = body
+    const { nombre, descripcion, lado, precio_unitario } = body
     const refaccion = await prisma.refaccion.update({
       where: { id_refaccion: id },
-      data: { nombre, descripcion, lado, precio_unitario: parseFloat(precio_unitario), ...(stock != null && { stock: Number(stock) }) },
+      data: { nombre, descripcion, lado, precio_unitario: parseFloat(precio_unitario) },
     })
     await registrarAuditoria(`Editó refacción: ${nombre} (ID: ${id})`, "refacciones")
     return NextResponse.json(refaccion)

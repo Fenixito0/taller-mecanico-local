@@ -29,7 +29,7 @@ function LadoBadge({ lado }) {
 }
 
 function RefaccionModal({ refaccion, onClose, onSave }) {
-  const [form, setForm]       = useState(refaccion ? { ...refaccion, precio_unitario: String(refaccion.precio_unitario), stock: String(refaccion.stock ?? 0) } : { nombre:"", descripcion:"", lado:"NA", precio_unitario:"", stock:"0" })
+  const [form, setForm]       = useState(refaccion ? { ...refaccion, precio_unitario: String(refaccion.precio_unitario) } : { nombre:"", descripcion:"", lado:"NA", precio_unitario:"" })
   const [errors, setErrors]   = useState({})
   const [saving, setSaving]   = useState(false)
   const [apiError, setApiError] = useState("")
@@ -40,7 +40,6 @@ function RefaccionModal({ refaccion, onClose, onSave }) {
     const errs = {}
     if (!form.nombre)         errs.nombre = "El nombre es requerido"
     if (!form.precio_unitario || isNaN(form.precio_unitario)) errs.precio_unitario = "Precio inválido"
-    if (form.stock === "" || isNaN(form.stock) || Number(form.stock) < 0) errs.stock = "Stock inválido"
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
 
     setSaving(true)
@@ -51,7 +50,7 @@ function RefaccionModal({ refaccion, onClose, onSave }) {
       const res    = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, precio_unitario: parseFloat(form.precio_unitario), stock: parseInt(form.stock) }),
+        body: JSON.stringify({ ...form, precio_unitario: parseFloat(form.precio_unitario) }),
       })
       const data = await res.json()
       if (!res.ok) { setApiError(data.error || "Error al guardar"); setSaving(false); return }
@@ -103,13 +102,6 @@ function RefaccionModal({ refaccion, onClose, onSave }) {
                 <input type="number" value={form.precio_unitario} onChange={e => set("precio_unitario", e.target.value)} placeholder="0.00" min="0" step="0.01" style={{ ...inputStyle(!!errors.precio_unitario), paddingLeft:"1.75rem" }} />
               </div>
               {errors.precio_unitario && <p style={{ fontSize:"0.68rem", color:"var(--red)", marginTop:"0.3rem" }}>{errors.precio_unitario}</p>}
-            </div>
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:"0 1.25rem" }}>
-            <div style={{ marginBottom:"1.2rem" }}>
-              <label style={{ display:"block", fontSize:"0.68rem", fontWeight:700, color:"var(--navy)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:"0.4rem", fontFamily:"'Barlow Condensed',sans-serif" }}>Stock (unidades) <span style={{ color:"var(--red)" }}>*</span></label>
-              <input type="number" value={form.stock} onChange={e => set("stock", e.target.value)} placeholder="0" min="0" step="1" style={inputStyle(!!errors.stock)} />
-              {errors.stock && <p style={{ fontSize:"0.68rem", color:"var(--red)", marginTop:"0.3rem" }}>{errors.stock}</p>}
             </div>
           </div>
         </div>
@@ -196,7 +188,7 @@ export default function RefaccionesPage() {
           <table style={{ width:"100%", borderCollapse:"collapse" }}>
             <thead>
               <tr style={{ background:"var(--navy)" }}>
-                {["Nombre","Descripción","Lado","Stock","Precio","Acciones"].map(col => (
+                {["Nombre","Descripción","Lado","Estado","Precio","Acciones"].map(col => (
                   <th key={col} style={{ padding:"0.9rem 1.25rem", textAlign:"left", fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.72rem", fontWeight:700, color:"rgba(255,255,255,0.7)", letterSpacing:"0.14em", textTransform:"uppercase", whiteSpace:"nowrap" }}>{col}</th>
                 ))}
               </tr>
@@ -214,7 +206,7 @@ export default function RefaccionesPage() {
                   </td>
                   <td style={{ padding:"0.95rem 1.25rem" }}><LadoBadge lado={r.lado} /></td>
                   <td style={{ padding:"0.95rem 1.25rem" }}>
-                    <span style={{ padding:"0.2rem 0.65rem", borderRadius:"6px", fontSize:"0.82rem", fontWeight:700, background:r.stock>0?"#F0FDF4":"#FFF0F2", color:r.stock>0?"#15803D":"#C8102E", border:`1px solid ${r.stock>0?"#BBF7D0":"#FECDD3"}` }}>{r.stock}</span>
+                    <span style={{ padding:"0.2rem 0.65rem", borderRadius:"6px", fontSize:"0.75rem", fontWeight:700, background:r.stock>0?"#F0FDF4":"#FFF0F2", color:r.stock>0?"#15803D":"#C8102E", border:`1px solid ${r.stock>0?"#BBF7D0":"#FECDD3"}` }}>{r.stock>0?"Disponible":"Asignada"}</span>
                   </td>
                   <td style={{ padding:"0.95rem 1.25rem", fontWeight:700, color:"var(--navy)", fontSize:"0.9rem" }}>
                     ${Number(r.precio_unitario).toFixed(2)} <span style={{ color:"#9CA3AF", fontSize:"0.75rem", fontWeight:400 }}>MXN</span>

@@ -46,8 +46,8 @@ export async function POST(req) {
       for (const r of refacciones) {
         const ref = await tx.refaccion.findUnique({ where: { id_refaccion: Number(r.id_refaccion) } })
         if (!ref) throw new Error(`Refacción ${r.id_refaccion} no encontrada`)
-        if (ref.stock < Number(r.cantidad)) throw new Error(`Stock insuficiente para "${ref.nombre}" (disponible: ${ref.stock}, solicitado: ${r.cantidad})`)
-        await tx.refaccion.update({ where: { id_refaccion: ref.id_refaccion }, data: { stock: { decrement: Number(r.cantidad) } } })
+        if (ref.stock <= 0) throw new Error(`La pieza "${ref.nombre}" ya está asignada a otro cliente`)
+        await tx.refaccion.update({ where: { id_refaccion: ref.id_refaccion }, data: { stock: 0 } })
       }
       const o = await tx.ordenServicio.create({
         data: { id_vehiculo: Number(id_vehiculo), rfc_cliente, id_usuario: id_usuario ? Number(id_usuario) : null, observaciones: observaciones || null, estado: "pendiente" },
@@ -55,7 +55,7 @@ export async function POST(req) {
       await tx.detalleOrden.createMany({
         data: refacciones.map(r => ({
           id_orden: o.id_orden, id_refaccion: Number(r.id_refaccion),
-          cantidad: Number(r.cantidad), precio_unitario: parseFloat(r.precio_unitario),
+          cantidad: 1, precio_unitario: parseFloat(r.precio_unitario),
         })),
       })
       return o
@@ -64,7 +64,7 @@ export async function POST(req) {
     return NextResponse.json(orden, { status: 201 })
   } catch (e) {
     const msg = e.message || ""
-    if (msg.startsWith("Stock insuficiente") || msg.includes("no encontrada"))
+    if (msg.startsWith("La pieza") || msg.includes("no encontrada"))
       return NextResponse.json({ error: msg }, { status: 400 })
     return NextResponse.json({ error: "Error al crear orden" }, { status: 500 })
   }

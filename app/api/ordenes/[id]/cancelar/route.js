@@ -24,7 +24,7 @@ export async function PATCH(_, { params }) {
 
     await prisma.$transaction(async (tx) => {
       for (const d of orden.detalles) {
-        await tx.refaccion.update({ where: { id_refaccion: d.id_refaccion }, data: { stock: { increment: d.cantidad } } })
+        await tx.refaccion.update({ where: { id_refaccion: d.id_refaccion }, data: { stock: 1 } })
       }
       await tx.ordenServicio.update({ where: { id_orden: id }, data: { estado: "cancelado" } })
     })

@@ -81,10 +81,6 @@ export default function NuevaOrdenPage() {
     })
   }
 
-  const setCantidad = (id, cantidad) => {
-    setRefacciones(rs => rs.map(r => r.id_refaccion === id ? { ...r, cantidad } : r))
-  }
-
   const canNext = () => {
     if (step===1) return !!cliente
     if (step===2) return !!vehiculo
@@ -219,28 +215,23 @@ export default function NuevaOrdenPage() {
                     {filteredRefacciones.map(r => {
                       const sel = refacciones.find(s => s.id_refaccion===r.id_refaccion)
                       const ls  = LADO_COLORS[r.lado]||LADO_COLORS.NA
-                      const sinStock = (r.stock ?? 0) <= 0 && !sel
+                      const sinStock = (r.stock ?? 0) <= 0
                       return (
                         <div key={r.id_refaccion} style={{ padding:"0.9rem 1.1rem", borderRadius:"10px", border:`2px solid ${sel?"var(--red)":sinStock?"#E5E7EB":"var(--border)"}`, background:sel?"#FFF0F2":sinStock?"#F3F4F6":"#FAFAFA", transition:"all 0.15s", display:"flex", alignItems:"center", gap:"1rem", opacity:sinStock?0.5:1 }}>
-                          <div onClick={() => !sinStock && toggleRefaccion(r)} style={{ width:"22px", height:"22px", borderRadius:"6px", flexShrink:0, border:`2px solid ${sel?"var(--red)":"#D1D5DB"}`, background:sel?"var(--red)":"#fff", display:"flex", alignItems:"center", justifyContent:"center", cursor:sinStock?"not-allowed":"pointer", transition:"all 0.15s" }}>
+                          <div onClick={() => !sinStock && toggleRefaccion(r)} style={{ width:"22px", height:"22px", borderRadius:"6px", flexShrink:0, border:`2px solid ${sel?"var(--red)":sinStock?"#D1D5DB":"#D1D5DB"}`, background:sel?"var(--red)":"#fff", display:"flex", alignItems:"center", justifyContent:"center", cursor:sinStock?"not-allowed":"pointer", transition:"all 0.15s" }}>
                             {sel&&<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
                           </div>
                           <div style={{ flex:1, cursor:sinStock?"not-allowed":"pointer" }} onClick={() => !sinStock && toggleRefaccion(r)}>
                             <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
                               <span style={{ fontWeight:600, fontSize:"0.9rem", color:sinStock?"#9CA3AF":"var(--navy)" }}>{r.nombre}</span>
                               <span style={{ background:ls.bg, color:ls.color, border:`1px solid ${ls.border}`, padding:"0.1rem 0.5rem", borderRadius:"4px", fontSize:"0.68rem", fontWeight:700 }}>{LADO_LABELS[r.lado]}</span>
-                              {sinStock && <span style={{ background:"#FFF0F2", color:"#C8102E", border:"1px solid #FECDD3", padding:"0.1rem 0.5rem", borderRadius:"4px", fontSize:"0.65rem", fontWeight:700 }}>SIN STOCK</span>}
-                              {!sinStock && <span style={{ fontSize:"0.68rem", color:"#9CA3AF" }}>({r.stock ?? 0} disp.)</span>}
+                              {sinStock && <span style={{ background:"#FFF0F2", color:"#C8102E", border:"1px solid #FECDD3", padding:"0.1rem 0.5rem", borderRadius:"4px", fontSize:"0.65rem", fontWeight:700 }}>ASIGNADA</span>}
                             </div>
                             {r.descripcion&&<p style={{ fontSize:"0.78rem", color:"#9CA3AF", marginTop:"0.1rem" }}>{r.descripcion}</p>}
                           </div>
                           <span style={{ fontWeight:700, color:sinStock?"#9CA3AF":"var(--navy)", fontSize:"0.9rem", whiteSpace:"nowrap" }}>${Number(r.precio_unitario).toFixed(2)}</span>
                           {sel&&(
-                            <div style={{ display:"flex", alignItems:"center", gap:"0.4rem", flexShrink:0 }} onClick={e => e.stopPropagation()}>
-                              <button onClick={() => setCantidad(r.id_refaccion,Math.max(1,sel.cantidad-1))} style={{ width:"28px", height:"28px", border:"2px solid var(--border)", borderRadius:"7px", background:"#fff", color:"var(--navy)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontWeight:700 }}>−</button>
-                              <span style={{ width:"28px", textAlign:"center", fontWeight:700, color:"var(--navy)" }}>{sel.cantidad}</span>
-                              <button onClick={() => setCantidad(r.id_refaccion,Math.min(r.stock ?? 1,sel.cantidad+1))} style={{ width:"28px", height:"28px", border:"2px solid var(--border)", borderRadius:"7px", background:"#fff", color:"var(--navy)", display:"flex", alignItems:"center", justifyContent:"center", cursor:sel.cantidad>=(r.stock??1)?"not-allowed":"pointer", fontWeight:700, opacity:sel.cantidad>=(r.stock??1)?0.4:1 }}>+</button>
-                            </div>
+                            <span style={{ fontSize:"0.72rem", fontWeight:700, color:"#15803D", background:"#F0FDF4", border:"1px solid #BBF7D0", padding:"0.2rem 0.6rem", borderRadius:"6px" }}>Seleccionada</span>
                           )}
                         </div>
                       )
@@ -280,7 +271,7 @@ export default function NuevaOrdenPage() {
               </SectionCard>
               <SectionCard title="Refacciones Seleccionadas" icon="🔩">
                 <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                  <thead><tr style={{ background:"#F9FAFB" }}>{["Refacción","Lado","Cant.","Precio","Subtotal"].map(col=><th key={col} style={{ padding:"0.6rem 0.875rem", textAlign:"left", fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.68rem", fontWeight:700, color:"#9CA3AF", letterSpacing:"0.1em", textTransform:"uppercase" }}>{col}</th>)}</tr></thead>
+                  <thead><tr style={{ background:"#F9FAFB" }}>{["Refacción","Lado","Precio"].map(col=><th key={col} style={{ padding:"0.6rem 0.875rem", textAlign:"left", fontFamily:"'Barlow Condensed',sans-serif", fontSize:"0.68rem", fontWeight:700, color:"#9CA3AF", letterSpacing:"0.1em", textTransform:"uppercase" }}>{col}</th>)}</tr></thead>
                   <tbody>
                     {refacciones.map(r=>{
                       const ls=LADO_COLORS[r.lado]||LADO_COLORS.NA
@@ -288,16 +279,14 @@ export default function NuevaOrdenPage() {
                         <tr key={r.id_refaccion} style={{ borderTop:"1px solid var(--border)" }}>
                           <td style={{ padding:"0.7rem 0.875rem", fontSize:"0.88rem", fontWeight:600, color:"var(--navy)" }}>{r.nombre}</td>
                           <td style={{ padding:"0.7rem 0.875rem" }}><span style={{ background:ls.bg, color:ls.color, border:`1px solid ${ls.border}`, padding:"0.15rem 0.5rem", borderRadius:"4px", fontSize:"0.7rem", fontWeight:700 }}>{LADO_LABELS[r.lado]}</span></td>
-                          <td style={{ padding:"0.7rem 0.875rem", textAlign:"center", fontWeight:700, color:"var(--navy)" }}>{r.cantidad}</td>
-                          <td style={{ padding:"0.7rem 0.875rem", color:"#4B5563" }}>${Number(r.precio_unitario).toFixed(2)}</td>
-                          <td style={{ padding:"0.7rem 0.875rem", fontWeight:700, color:"var(--navy)" }}>${(Number(r.precio_unitario)*r.cantidad).toFixed(2)}</td>
+                          <td style={{ padding:"0.7rem 0.875rem", fontWeight:700, color:"var(--navy)" }}>${Number(r.precio_unitario).toFixed(2)}</td>
                         </tr>
                       )
                     })}
                   </tbody>
                   <tfoot>
                     <tr style={{ borderTop:"2px solid var(--navy)" }}>
-                      <td colSpan={4} style={{ padding:"0.875rem", textAlign:"right", fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, fontSize:"0.85rem", color:"var(--navy)", letterSpacing:"0.06em" }}>TOTAL ESTIMADO</td>
+                      <td colSpan={2} style={{ padding:"0.875rem", textAlign:"right", fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, fontSize:"0.85rem", color:"var(--navy)", letterSpacing:"0.06em" }}>TOTAL ESTIMADO</td>
                       <td style={{ padding:"0.875rem", fontWeight:800, fontSize:"1.1rem", color:"var(--red)", fontFamily:"'Barlow Condensed',sans-serif" }}>${subtotal.toFixed(2)}</td>
                     </tr>
                   </tfoot>
@@ -349,8 +338,8 @@ export default function NuevaOrdenPage() {
                 <p style={{ fontSize:"0.65rem", fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:"0.5rem", fontFamily:"'Barlow Condensed',sans-serif" }}>Refacciones ({refacciones.length})</p>
                 {refacciones.length===0?<p style={{ fontSize:"0.82rem", color:"#D1D5DB" }}>Sin seleccionar</p>:refacciones.map(r=>(
                   <div key={r.id_refaccion} style={{ display:"flex", justifyContent:"space-between", marginBottom:"0.4rem" }}>
-                    <span style={{ fontSize:"0.8rem", color:"var(--navy)" }}>{r.nombre} ×{r.cantidad}</span>
-                    <span style={{ fontSize:"0.8rem", fontWeight:600, color:"var(--navy)" }}>${(Number(r.precio_unitario)*r.cantidad).toFixed(2)}</span>
+                    <span style={{ fontSize:"0.8rem", color:"var(--navy)" }}>{r.nombre}</span>
+                    <span style={{ fontSize:"0.8rem", fontWeight:600, color:"var(--navy)" }}>${Number(r.precio_unitario).toFixed(2)}</span>
                   </div>
                 ))}
                 {refacciones.length>0&&<div style={{ marginTop:"0.75rem", paddingTop:"0.75rem", borderTop:"2px dashed var(--border)", display:"flex", justifyContent:"space-between" }}>
