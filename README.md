@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Taller Mecánico — versión local (XAMPP)
 
-## Getting Started
+Sistema de gestión para taller mecánico (Next.js + Prisma + NextAuth) configurado para
+correr **100 % en local** con el MySQL/MariaDB de **XAMPP**. No requiere Supabase ni Upstash Redis.
 
-First, run the development server:
+## Requisitos
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- [Node.js](https://nodejs.org) 20 o superior
+- [XAMPP](https://www.apachefriends.org) (solo se usa el módulo **MySQL**)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Instalación
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+1. **Inicia MySQL** desde el panel de control de XAMPP (botón *Start* en MySQL).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Crea la base de datos** (en phpMyAdmin → `http://localhost/phpmyadmin`, o por consola):
 
-## Learn More
+   ```sql
+   CREATE DATABASE taller_mecanico CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. **Configura las variables de entorno**:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   cp .env.example .env
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   Edita `.env` si tu usuario `root` de MySQL tiene contraseña:
+   `mysql://root:TU_PASSWORD@localhost:3306/taller_mecanico`.
+   Cambia `NEXTAUTH_SECRET` por un valor largo y aleatorio.
 
-## Deploy on Vercel
+4. **Instala dependencias y crea las tablas**:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   ```bash
+   npm install
+   npm run db:push
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. **Crea el usuario administrador** (revisa usuario/contraseña en `scripts/crear-admin.js` antes de ejecutarlo):
+
+   ```bash
+   npm run db:admin
+   ```
+
+6. **Arranca la aplicación**:
+
+   ```bash
+   npm run dev
+   ```
+
+   Abre <http://localhost:3000> e inicia sesión.
+
+## Scripts
+
+| Comando | Descripción |
+|---|---|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` / `npm start` | Compilación y servidor de producción local |
+| `npm run db:push` | Crea/actualiza las tablas en MySQL según `prisma/schema.prisma` |
+| `npm run db:admin` | Crea (o reinicia la contraseña de) el usuario `admin` |
+| `npm run db:empleado` | Crea un usuario empleado (`scripts/crear-empleado.js`) |
+| `npm run db:studio` | Abre Prisma Studio para ver/editar datos |
+
+## Notas
+
+- El límite de intentos de login (5 intentos / 15 min por IP) ahora se guarda **en memoria**
+  en lugar de Redis; se reinicia al reiniciar el servidor.

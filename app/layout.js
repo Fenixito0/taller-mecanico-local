@@ -1,17 +1,13 @@
-import { Barlow, Barlow_Condensed } from "next/font/google";
+// Fuentes servidas localmente (sin depender de Google Fonts / internet)
+import "@fontsource/barlow/400.css";
+import "@fontsource/barlow/500.css";
+import "@fontsource/barlow/600.css";
+import "@fontsource/barlow/700.css";
+import "@fontsource/barlow-condensed/400.css";
+import "@fontsource/barlow-condensed/600.css";
+import "@fontsource/barlow-condensed/700.css";
+import "@fontsource/barlow-condensed/800.css";
 import "./globals.css";
-
-const barlow = Barlow({
-  variable: "--font-barlow",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const barlowCondensed = Barlow_Condensed({
-  variable: "--font-barlow-condensed",
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
-});
 
 export const metadata = {
   title: "Taller Mecánico — Sistema de Gestión",
@@ -21,7 +17,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <body className={`${barlow.variable} ${barlowCondensed.variable}`}>
+      <body>
         {children}
       </body>
     </html>
