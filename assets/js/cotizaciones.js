@@ -24,7 +24,7 @@
     const btns = [`<a class="act-btn act-edit" href="cotizacion_imprimir.php?id=${c.id_cotizacion}">Imprimir</a>`]
     if (wa) btns.push(`<a class="act-btn act-wa" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`)
     if (c.estado === "abierta") btns.push(`<button type="button" class="act-btn act-del" data-convertir="${c.id_cotizacion}">${sym("checkCircle", 13)}Convertir en orden</button>`)
-    else btns.push(`<a class="act-btn act-gray" href="ordenes.php?id=${c.id_orden}">Orden #${pad4(c.id_orden)}</a>`)
+    else btns.push(`<a class="act-btn act-gray" href="orden.php?id=${c.id_orden}">Orden #${pad4(c.id_orden)}</a>`)
     if (ES_ADMIN) btns.push(`<button type="button" class="act-btn act-gray" data-del="${c.id_cotizacion}" title="Eliminar">${ICON.trash}</button>`)
     return btns.join("")
   }

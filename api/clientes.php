@@ -27,8 +27,9 @@ function cliente_json(array $c): array
 function validar_cliente(array $d, bool $nuevo): ?string
 {
     $letras = '/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{1,50}$/u';
-    if ($nuevo && !preg_match('/^[A-Z0-9Ñ&]{12,13}$/u', (string) $d['rfc'])) {
-        return 'RFC inválido (12 a 13 caracteres alfanuméricos)';
+    // Formato del SAT: 3 letras (empresa) o 4 (persona) + fecha AAMMDD + 3 de homoclave
+    if ($nuevo && (!preg_match('/^[A-ZÑ&]{3,4}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[A-Z0-9]{3}$/u', (string) $d['rfc']))) {
+        return 'RFC inválido: letras iniciales, fecha AAMMDD y 3 caracteres de homoclave';
     }
     if ($d['nombre'] === null || !preg_match($letras, $d['nombre'])) {
         return 'Nombre inválido';

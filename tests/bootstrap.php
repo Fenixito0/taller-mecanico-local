@@ -42,7 +42,7 @@ function test_ejecutar_sql(string $archivo): void
 
 function test_mysql(string $sql): void
 {
-    $cmd = sprintf('"%s" -u%s %s --default-character-set=utf8mb4', MYSQL_BIN, config('db_user'), config('db_pass') !== '' ? '-p' . config('db_pass') : '');
+    $cmd = sprintf('"%s" -h%s -P%d -u%s %s --default-character-set=utf8mb4', MYSQL_BIN, config('db_host'), (int) config('db_port'), config('db_user'), config('db_pass') !== '' ? '-p' . config('db_pass') : '');
     $proc = proc_open($cmd, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
     if (!is_resource($proc)) {
         throw new RuntimeException('No se pudo ejecutar mysql');

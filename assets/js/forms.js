@@ -87,6 +87,21 @@ const Forms = (() => {
     correo: () => true,
   }
 
+  /**
+   * Formato del SAT: 3 letras (empresa) o 4 (persona) + fecha AAMMDD válida + 3 de homoclave.
+   * @returns {string|null} mensaje de error o null si es válido
+   */
+  function errorRfc(rfc) {
+    const m = /^([A-ZÑ&]{3,4})(\d{2})(\d{2})(\d{2})([A-Z0-9]{3})$/.exec(rfc)
+    if (!m) return rfc.length === 13
+      ? "RFC inválido: 4 letras, 6 números de la fecha (AAMMDD) y 3 de homoclave"
+      : "RFC inválido: 3 letras, 6 números de la fecha (AAMMDD) y 3 de homoclave"
+    const mes = Number(m[3])
+    const dia = Number(m[4])
+    if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return "La fecha del RFC no es válida (AAMMDD)"
+    return null
+  }
+
   function campo(key, label, { required = false, hint = "", attrs = "", full = false, cls = "" } = {}) {
     return `
       <div class="field${full ? " span-all" : ""}" data-field="${key}">
@@ -154,13 +169,17 @@ const Forms = (() => {
     m.saveBtn.onclick = async () => {
       const errs = {}
       if (!form.rfc || form.rfc.length < 12) errs.rfc = "RFC debe tener entre 12 y 13 caracteres"
+      else if (!isEdit && errorRfc(form.rfc)) errs.rfc = errorRfc(form.rfc)
       else if (!isEdit && existentes.some((c) => c.rfc === form.rfc)) errs.rfc = "Este RFC ya está registrado"
       if (!form.nombre.trim()) errs.nombre = "El nombre es requerido"
       if (!form.apellido_paterno.trim()) errs.apellido_paterno = "El apellido paterno es requerido"
       if (form.telefono && form.telefono.length !== 10) errs.telefono = "El teléfono debe tener 10 dígitos"
       if (form.correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) errs.correo = "Correo inválido"
       Object.keys(VALID_CLIENTE).forEach((k) => setError(ov, k, errs[k]))
-      if (Object.keys(errs).length > 0) return enfocarPrimerError(ov)
+      if (Object.keys(errs).length > 0) {
+        toast(Object.values(errs)[0], "error")
+        return enfocarPrimerError(ov)
+      }
 
       const url = isEdit ? `api/clientes.php?rfc=${encodeURIComponent(form.rfc)}` : "api/clientes.php"
       const data = await enviar(m, url, isEdit ? "PUT" : "POST", form, saveText)
@@ -174,17 +193,36 @@ const Forms = (() => {
   }
 
   // ── Vehículo ─────────────────────────────────────────────────────────
+  /** Placas de autos en México: 6 o 7 letras y números (sin guiones), con letras Y números. Igual que en el servidor. */
+  const PLACAS_MIN = 6
+  const PLACAS_MAX = 7
+  const limpiarPlacas = (v) => String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, "")
+  function errorPlacas(v) {
+    const p = limpiarPlacas(v)
+    if (!p) return "Las placas son requeridas"
+    if (p.length < PLACAS_MIN) return `Faltan caracteres: las placas llevan ${PLACAS_MIN} o ${PLACAS_MAX} letras y números`
+    if (!/[A-Z]/.test(p) || !/\d/.test(p)) return "Las placas combinan letras y números"
+    return null
+  }
+
   /**
-   * @param {{vehiculo?:object|null, clientes?:object[], rfcFijo?:string|null, onSaved:(v:object)=>void}} opts
+   * @param {{vehiculo?:object|null, clientes?:object[], vehiculos?:object[], rfcFijo?:string|null, onSaved:(v:object)=>void}} opts
    *   rfcFijo: si se indica, el propietario queda fijo (uso desde Generar Orden).
+   *   vehiculos: lista ya cargada, para avisar de placas repetidas antes de enviar.
    */
-  function vehiculo({ vehiculo: actual = null, clientes = [], rfcFijo = null, onSaved }) {
+  async function vehiculo({ vehiculo: actual = null, clientes = [], vehiculos = [], rfcFijo = null, onSaved }) {
+    let cat
+    try {
+      cat = await Combo.catalogo()
+    } catch (e) {
+      return toast(e.message || "No se pudo cargar la lista de marcas", "error")
+    }
     const isEdit = !!actual
     const saveText = isEdit ? "ACTUALIZAR" : "GUARDAR"
     const anioMax = new Date().getFullYear() + 1
     const form = isEdit
       ? { marca: actual.marca || "", modelo: actual.modelo, anio: actual.anio, color: actual.color || "", placas: actual.placas, rfc_cliente: actual.rfc_cliente || "" }
-      : { marca: "", modelo: "", anio: new Date().getFullYear(), color: "", placas: "", rfc_cliente: rfcFijo || "" }
+      : { marca: "", modelo: "", anio: "", color: "", placas: "", rfc_cliente: rfcFijo || "" }
 
     const fijo = rfcFijo ? clientes.find((c) => c.rfc === rfcFijo) : null
     const selectorCliente = fijo
@@ -192,56 +230,127 @@ const Forms = (() => {
            <div class="input" style="background:#F9FAFB;font-weight:600;color:var(--navy)">${esc(fijo.nombre)} ${esc(fijo.apellido_paterno)} <span class="mono muted" style="font-weight:400">(${esc(fijo.rfc)})</span></div></div>`
       : `<div class="field" data-field="rfc_cliente">
            <label class="label" for="f-rfc_cliente">Cliente propietario <span class="req">*</span></label>
-           <select class="input" id="f-rfc_cliente" name="rfc_cliente">
-             <option value="">— Seleccione un cliente —</option>
-             ${clientes.map((c) => `<option value="${esc(c.rfc)}">${esc(c.nombre)} ${esc(c.apellido_paterno)} (${esc(c.rfc)})</option>`).join("")}
-           </select>
+           <div id="f-rfc-host"></div>
            <p class="ferr" data-err hidden></p>
          </div>`
 
     const m = crearModal({
       title: isEdit ? "EDITAR VEHÍCULO" : "NUEVO VEHÍCULO",
       sub: isEdit ? `Placas: ${esc(actual.placas)}` : "Complete los datos del vehículo",
-      maxWidth: 580,
+      maxWidth: 600,
       saveText,
       body: `${selectorCliente}
+        <div class="field field-key" data-field="placas"><label class="label" for="f-placas">Placas <span class="req">*</span></label>
+          <input class="input mono input-lg" id="f-placas" name="placas" maxlength="9" placeholder="ABC123A" autocomplete="off" ${isEdit ? "disabled" : ""}>
+          <p class="hint" data-hint></p><p class="ferr" data-err hidden></p></div>
         <div class="grid-2">
-          <div class="field" data-field="placas"><label class="label" for="f-placas">Placas <span class="req">*</span></label>
-            <input class="input mono" id="f-placas" name="placas" maxlength="10" placeholder="ABC1234" autocomplete="off" ${isEdit ? "disabled" : ""}><p class="ferr" data-err hidden></p></div>
-          <div class="field"><label class="label" for="f-marca">Marca</label>
-            <input class="input" id="f-marca" name="marca" maxlength="60" placeholder="Toyota, Nissan…" list="dl-marcas" autocomplete="off">
-            <datalist id="dl-marcas">${["Chevrolet", "Ford", "Honda", "Hyundai", "Kia", "Mazda", "Mitsubishi", "Nissan", "Toyota", "Volkswagen"].map((x) => `<option value="${x}">`).join("")}</datalist></div>
+          <div class="field" data-field="marca"><label class="label" for="f-marca">Marca <span class="req">*</span></label>
+            <div id="f-marca-host"></div><p class="hint" data-hint>Escribe para buscar</p><p class="ferr" data-err hidden></p></div>
           <div class="field" data-field="modelo"><label class="label" for="f-modelo">Modelo <span class="req">*</span></label>
-            <input class="input" id="f-modelo" name="modelo" maxlength="100" placeholder="Corolla, Sentra…" autocomplete="off"><p class="ferr" data-err hidden></p></div>
+            <div id="f-modelo-host"></div><p class="hint" data-hint>Primero elige la marca</p><p class="ferr" data-err hidden></p></div>
           <div class="field" data-field="anio"><label class="label" for="f-anio">Año <span class="req">*</span></label>
-            <input class="input" id="f-anio" name="anio" type="number" min="1950" max="${anioMax}"><p class="ferr" data-err hidden></p></div>
-          <div class="field span-all"><label class="label" for="f-color">Color</label>
+            <select class="input" id="f-anio" name="anio"><option value="">— Seleccione —</option>
+            ${Array.from({ length: anioMax - 1950 + 1 }, (_, i) => anioMax - i).map((a) => `<option value="${a}">${a}</option>`).join("")}</select>
+            <p class="ferr" data-err hidden></p></div>
+          <div class="field" data-field="color"><label class="label" for="f-color">Color</label>
             <select class="input" id="f-color" name="color"><option value="">— Seleccione —</option>
             ${COLORES.map((c) => `<option value="${c}">${c}</option>`).join("")}</select></div>
         </div>`,
     })
     const { ov } = m
-    const campos = ["marca", "modelo", "anio", "color", "placas", ...(fijo ? [] : ["rfc_cliente"])]
-    campos.forEach((k) => {
+    const marcaObj = () => cat.marcas.find((x) => x.nombre === form.marca) || null
+
+    // Placas: solo letras y números, máximo 7; el contador dice cuánto falta
+    const elPlacas = ov.querySelector('[name="placas"]')
+    const hintPlacas = ov.querySelector('[data-field="placas"] [data-hint]')
+    const pintarHintPlacas = () => {
+      const n = limpiarPlacas(form.placas).length
+      hintPlacas.className = `hint${n >= PLACAS_MIN ? " ok" : ""}`
+      hintPlacas.textContent = isEdit
+        ? "Las placas no se pueden cambiar"
+        : n ? `${n}/${PLACAS_MAX} · de ${PLACAS_MIN} a ${PLACAS_MAX} letras y números` : `${PLACAS_MIN} o ${PLACAS_MAX} letras y números, sin guiones (ej. ABC123A)`
+    }
+    elPlacas.value = form.placas
+    pintarHintPlacas()
+    elPlacas.addEventListener("input", () => {
+      form.placas = limpiarPlacas(elPlacas.value).slice(0, PLACAS_MAX)
+      elPlacas.value = form.placas
+      setError(ov, "placas", null)
+      pintarHintPlacas()
+    })
+
+    // Cliente propietario con buscador (por nombre o RFC)
+    let comboCliente = null
+    if (!fijo) {
+      const etiqueta = (c) => `${c.nombre} ${c.apellido_paterno} (${c.rfc})`
+      const actualCli = clientes.find((c) => c.rfc === form.rfc_cliente)
+      comboCliente = Combo.mount(ov.querySelector("#f-rfc-host"), {
+        id: "f-rfc_cliente",
+        items: clientes.map(etiqueta),
+        value: actualCli ? etiqueta(actualCli) : "",
+        placeholder: "Buscar cliente por nombre o RFC...",
+        onChange: (v) => {
+          form.rfc_cliente = clientes.find((c) => etiqueta(c) === v)?.rfc || ""
+          setError(ov, "rfc_cliente", null)
+        },
+      })
+    }
+
+    const comboModelo = Combo.mount(ov.querySelector("#f-modelo-host"), {
+      id: "f-modelo",
+      items: () => (marcaObj()?.modelos || []).map((x) => x.nombre),
+      value: form.modelo,
+      placeholder: "Buscar modelo...",
+      addLabel: "Agregar modelo",
+      guard: () => (marcaObj() ? null : "Primero selecciona la marca"),
+      onGuard: () => { setError(ov, "marca", "Selecciona la marca primero"); comboMarca.focus() },
+      onAdd: (texto) => Combo.agregarModelo(marcaObj(), texto),
+      onChange: (v) => { form.modelo = v; setError(ov, "modelo", null) },
+    })
+    const comboMarca = Combo.mount(ov.querySelector("#f-marca-host"), {
+      id: "f-marca",
+      items: () => cat.marcas.map((x) => x.nombre),
+      value: form.marca,
+      placeholder: "Buscar marca...",
+      addLabel: "Agregar marca",
+      onAdd: (texto) => Combo.agregarMarca(cat, texto),
+      onChange: (v) => {
+        form.marca = v
+        setError(ov, "marca", null)
+        // el modelo depende de la marca: si ya no corresponde, se limpia
+        if (!(marcaObj()?.modelos || []).some((x) => x.nombre === form.modelo)) {
+          form.modelo = ""
+          comboModelo.setValue("")
+        }
+        ov.querySelector('[data-field="modelo"] [data-hint]').textContent = "Escribe para buscar; si no está, agrégalo"
+        setTimeout(() => comboModelo.focus(), 0)
+      },
+    })
+
+    ;["anio", "color"].forEach((k) => {
       const el = ov.querySelector(`[name="${k}"]`)
       el.value = form[k] ?? ""
-      el.addEventListener("input", () => {
-        form[k] = k === "placas" ? el.value.toUpperCase().replace(/[^A-Z0-9-]/g, "") : el.value
-        if (k === "placas") el.value = form[k]
-        setError(ov, k, null)
-      })
+      el.addEventListener("change", () => { form[k] = el.value; setError(ov, k, null) })
     })
 
     m.saveBtn.onclick = async () => {
       const errs = {}
-      if (!form.modelo.trim()) errs.modelo = "El modelo es requerido"
+      if (!isEdit) {
+        const ep = errorPlacas(form.placas)
+        if (ep) errs.placas = ep
+        else if (vehiculos.some((v) => limpiarPlacas(v.placas) === limpiarPlacas(form.placas))) errs.placas = "Ya hay un vehículo registrado con estas placas"
+      }
+      if (!form.rfc_cliente) errs.rfc_cliente = "Selecciona el cliente propietario"
+      if (!marcaObj()) errs.marca = "Selecciona la marca de la lista (o agrégala)"
+      if (!form.modelo || !(marcaObj()?.modelos || []).some((x) => x.nombre === form.modelo)) errs.modelo = "Selecciona el modelo de la lista (o agrégalo)"
       const anio = Number(form.anio)
-      if (!form.anio) errs.anio = "El año es requerido"
+      if (!form.anio) errs.anio = "Selecciona el año"
       else if (anio < 1950 || anio > anioMax) errs.anio = `El año debe estar entre 1950 y ${anioMax}`
-      if (!form.placas) errs.placas = "Las placas son requeridas"
-      if (!form.rfc_cliente) errs.rfc_cliente = "Selecciona un cliente"
-      ;["modelo", "anio", "placas", "rfc_cliente"].forEach((k) => setError(ov, k, errs[k]))
-      if (Object.keys(errs).length > 0) return enfocarPrimerError(ov)
+      ;["placas", "rfc_cliente", "marca", "modelo", "anio"].forEach((k) => setError(ov, k, errs[k]))
+      if (Object.keys(errs).length > 0) {
+        toast(Object.values(errs)[0], "error")
+        return enfocarPrimerError(ov)
+      }
 
       const url = isEdit ? `api/vehiculos.php?id=${actual.id_vehiculo}` : "api/vehiculos.php"
       const data = await enviar(m, url, isEdit ? "PUT" : "POST", { ...form, anio }, saveText)
@@ -251,8 +360,10 @@ const Forms = (() => {
       onSaved({ ...data, rfc_cliente: form.rfc_cliente })
     }
 
-    ov.querySelector(isEdit ? '[name="modelo"]' : fijo ? '[name="placas"]' : '[name="rfc_cliente"]').focus()
+    if (isEdit) comboMarca.focus()
+    else if (fijo) elPlacas.focus()
+    else comboCliente.focus()
   }
 
-  return { cliente, vehiculo, COLORES }
+  return { cliente, vehiculo, COLORES, limpiarPlacas, errorPlacas }
 })()

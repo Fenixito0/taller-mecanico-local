@@ -75,7 +75,7 @@ function placas_aleatorias(): string
 const NOMBRES = ['Juan', 'María', 'José', 'Guadalupe', 'Luis', 'Ana', 'Carlos', 'Sofía', 'Miguel', 'Fernanda', 'Jorge', 'Daniela', 'Ricardo', 'Paola'];
 const APELLIDOS = ['García', 'Hernández', 'López', 'Martínez', 'González', 'Rodríguez', 'Pérez', 'Sánchez', 'Ramírez', 'Torres', 'Flores', 'Rivera', 'Gómez', 'Díaz'];
 const AUTOS = [['Nissan', 'Versa'], ['Chevrolet', 'Aveo'], ['Volkswagen', 'Jetta'], ['Toyota', 'Corolla'], ['Honda', 'Civic'],
-    ['Ford', 'Ranger'], ['Mazda', '3'], ['Kia', 'Rio'], ['Volkswagen', 'Vento'], ['Chevrolet', 'Spark']];
+    ['Ford', 'Ranger'], ['Mazda', 'Mazda 3'], ['Kia', 'Rio'], ['Volkswagen', 'Vento'], ['Chevrolet', 'Spark']];
 const COLORES = ['Blanco', 'Negro', 'Gris', 'Plata', 'Rojo', 'Azul', 'Arena'];
 const METODOS = ['efectivo', 'tarjeta', 'transferencia'];
 
@@ -86,16 +86,16 @@ const METODOS = ['efectivo', 'tarjeta', 'transferencia'];
 const ORDENES = [
     ['tipo' => 'seguro', 'final' => 'completado', 'obs' => 'Choque frontal', 'deducible' => 6500,
      'piezas' => [['Defensa delantera', 'central', 'instalada'], ['Faro', 'izquierdo', 'instalada'], ['Parrilla', 'central', 'instalada']],
-     'extras' => [['Pintura completa del vehículo', 4500]]],
+     'extras' => []],
     ['tipo' => 'seguro', 'final' => 'completado', 'obs' => 'Golpe en puerta trasera', 'deducible' => 4200,
      'piezas' => [['Puerta trasera', 'derecho', 'instalada'], ['Moldura de puerta', 'derecho', 'instalada']], 'extras' => []],
     ['tipo' => 'seguro', 'final' => 'pendiente', 'obs' => 'Alcance por detrás', 'deducible' => 5000,
      'piezas' => [['Defensa trasera', 'central', 'pendiente'], ['Calavera', 'izquierdo', 'recibida'], ['Cajuela', 'central', 'pendiente']],
-     'extras' => [['Pulido de faros', 600]]],
+     'extras' => []],
     ['tipo' => 'seguro', 'final' => 'pendiente', 'obs' => 'Golpe lateral izquierdo', 'deducible' => 5500,
      'piezas' => [['Espejo lateral', 'izquierdo', 'devolver'], ['Salpicadera', 'izquierdo', 'instalada']], 'extras' => []],
     ['tipo' => 'seguro', 'final' => 'pendiente', 'obs' => 'Cofre y faro dañados', 'deducible' => 3800, 'anticipo' => 1000,
-     'piezas' => [['Cofre', 'central', 'instalada'], ['Faro', 'derecho', 'instalada']], 'extras' => [['Cambio de tapetes', 900]]],
+     'piezas' => [['Cofre', 'central', 'instalada'], ['Faro', 'derecho', 'instalada']], 'extras' => []],
     ['tipo' => 'seguro', 'final' => 'cancelado', 'obs' => 'Cliente decidió no reparar', 'deducible' => 4000,
      'piezas' => [['Parabrisas', 'central', 'pendiente']], 'extras' => []],
     ['tipo' => 'particular', 'final' => 'completado', 'obs' => 'Reparación de defensa y pintura', 'mano_obra' => 2500,
@@ -157,7 +157,7 @@ $resumen = db_transaction(static function (PDO $pdo) use ($usuarios, $asegurador
         $esSeguro = $g['tipo'] === 'seguro';
         $seguro = normalizar_seguro($esSeguro
             ? ['tipo' => 'seguro', 'aseguradora' => $aseguradoras[$conteo['seguro'] % count($aseguradoras)],
-               'num_siniestro' => (string) random_int(1000000, 9999999), 'deducible' => $g['deducible']]
+               'num_siniestro' => 'SIN' . random_int(1000000000, 9999999999), 'deducible' => $g['deducible']]
             : ['tipo' => 'particular'], $aseguradoras);
         $piezas = array_map(static fn (array $p): array => normalizar_pieza(
             ['nombre' => $p[0], 'lado' => $p[1], 'origen' => $esSeguro ? 'aseguradora' : 'taller', 'cantidad' => 1, 'precio_unitario' => $p[3] ?? null],

@@ -38,7 +38,7 @@
           <tr>
             <td><p class="p-main">${esc(p.nombre)} ${p.es_extra ? extraBadge() : ""}</p>
               <p class="p-sub">${esc(LADO_LABELS[p.lado] || p.lado)}${p.cantidad > 1 ? ` · ×${p.cantidad}` : ""}${p.estado === "devuelta" && p.motivo_devolucion ? ` · ${esc(p.motivo_devolucion)}` : ""}</p></td>
-            <td><a class="tag bold" href="ordenes.php?id=${p.id_orden}" style="letter-spacing:0">#${pad4(p.id_orden)}</a></td>
+            <td><a class="tag bold" href="orden.php?id=${p.id_orden}" style="letter-spacing:0">#${pad4(p.id_orden)}</a></td>
             <td><p class="p-main" style="font-weight:400">${esc(p.vehiculo)}</p><p class="p-sub mono">${esc(p.placas)}</p></td>
             <td>${esc(p.cliente)}</td>
             <td>${p.origen === "aseguradora" ? esc(p.aseguradora || "Aseguradora") : "Taller"}</td>

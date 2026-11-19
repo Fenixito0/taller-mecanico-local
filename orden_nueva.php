@@ -42,5 +42,5 @@ require __DIR__ . '/includes/layout_top.php';
   </div>
 </div>
 <?php
-$scripts = ['forms.js', 'orden_nueva.js'];
+$scripts = ['combo.js', 'forms.js', 'orden_nueva.js'];
 require __DIR__ . '/includes/layout_bottom.php';
