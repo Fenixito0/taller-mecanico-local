@@ -268,3 +268,27 @@ function test_api_catalogo(): void
     t_equals(201, $c->pedir('POST', 'api/catalogo.php', ['tipo' => 'pieza', 'nombre' => 'Pieza API'])['status']);
     t_equals(400, $c->pedir('POST', 'api/catalogo.php', ['tipo' => 'otro', 'nombre' => 'X'])['status']);
 }
+
+function test_api_cliente_rfc_formato_sat(): void
+{
+    test_reset_db();
+    $c = ClienteApi::sesion('empleado');
+    $base = ['nombre' => 'Ana', 'apellido_paterno' => 'Ruiz'];
+    t_equals(400, $c->pedir('POST', 'api/clientes.php', $base + ['rfc' => 'ABC123456789'])['status'], 'mes 34 no existe');
+    t_equals(400, $c->pedir('POST', 'api/clientes.php', $base + ['rfc' => 'RUAA8013011A2'])['status'], 'mes 13 no existe');
+    t_equals(400, $c->pedir('POST', 'api/clientes.php', $base + ['rfc' => '1234800101AB1'])['status'], 'debe iniciar con letras');
+    $r = $c->pedir('POST', 'api/clientes.php', $base + ['rfc' => 'RUAA800101AB1']);
+    t_equals(201, $r['status'], $r['raw']);
+    t_equals(201, $c->pedir('POST', 'api/clientes.php', $base + ['rfc' => 'EMP991231XY9'])['status'], 'persona moral (12)');
+}
+
+function test_api_detalle_orden_para_su_pagina(): void
+{
+    test_reset_db();
+    $c = ClienteApi::sesion('empleado');
+    $id = api_orden($c, ['tipo' => 'seguro', 'aseguradora' => 'Qualitas', 'num_siniestro' => 'SIN000000009', 'deducible' => 3000]);
+    $o = $c->pedir('GET', "api/ordenes.php?id={$id}")['data'];
+    t_assert(array_key_exists('total_venta', $o) && $o['total_venta'] === null, 'total_venta nulo mientras no se cobra');
+    t_assert(($o['creada_por'] ?? '') !== '', 'quién la registró');
+    t_equals(['Api', 'SIN000000009'], [$o['cliente']['nombre'], $o['num_siniestro']]);
+}

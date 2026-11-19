@@ -33,5 +33,5 @@ require __DIR__ . '/includes/layout_top.php';
   <div class="table-foot" id="foot"></div>
 </div>
 <?php
-$scripts = ['piezas_ui.js', 'piezas.js'];
+$scripts = ['combo.js', 'piezas_ui.js', 'piezas.js'];
 require __DIR__ . '/includes/layout_bottom.php';

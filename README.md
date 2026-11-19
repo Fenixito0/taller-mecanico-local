@@ -18,9 +18,10 @@ Módulos: clientes, vehículos, órdenes de servicio de **seguro** o **particula
    C:\xampp\mysql\bin\mysql.exe -uroot < database\schema.sql
    C:\xampp\mysql\bin\mysql.exe -uroot < database\migracion_v2.sql
    C:\xampp\mysql\bin\mysql.exe -uroot < database\migracion_v3.sql
+   C:\xampp\mysql\bin\mysql.exe -uroot < database\migracion_v4.sql
    ```
 
-   `migracion_v2.sql` agrega etapas, kilometraje, pagos/anticipos, descuentos, cotizaciones y la configuración del taller. `migracion_v3.sql` agrega las órdenes de seguro, las piezas por orden, los cargos (mano de obra y extras) y la lista de aseguradoras; copia las refacciones de las órdenes anteriores como piezas. Ambas se pueden ejecutar varias veces sin dañar datos.
+   `migracion_v2.sql` agrega etapas, kilometraje, pagos/anticipos, descuentos, cotizaciones y la configuración del taller. `migracion_v3.sql` agrega las órdenes de seguro, las piezas por orden, los cargos (mano de obra y extras) y la lista de aseguradoras; copia las refacciones de las órdenes anteriores como piezas. `migracion_v4.sql` agrega los catálogos de **marcas, modelos y piezas** (con las más comunes en México y lo que ya estaba capturado). Todas se pueden ejecutar varias veces sin dañar datos.
 
 4. Crea un usuario (mínimo 8 caracteres de contraseña):
 
@@ -70,7 +71,17 @@ return [
 
 ## Uso rápido
 
-Al iniciar sesión se abre **Generar Orden**. Ahí mismo puedes registrar clientes y vehículos nuevos sin salir del asistente, elegir si la orden es de **seguro** (aseguradora, número de siniestro y deducible) o **particular**, capturar las piezas a cambio y los extras, anotar el kilometraje y ver el historial del cliente. Si el cliente de un trabajo particular aún no aprueba, usa **Guardar como cotización**. Si sales a medias, la orden en progreso se recupera al volver.
+Al iniciar sesión se abre **Generar Orden**. Ahí mismo puedes registrar clientes y vehículos nuevos sin salir del asistente, elegir si la orden es de **seguro** (aseguradora, número de siniestro y deducible) o **particular**, capturar las piezas a cambio (y en particular la mano de obra y los extras), anotar el kilometraje y ver el historial del cliente. Si el cliente de un trabajo particular aún no aprueba, usa **Guardar como cotización**. Si sales a medias, la orden en progreso se recupera al volver.
+
+### Para evitar errores de captura
+
+- **Nada se escribe libre si puede elegirse**: marca, modelo (solo los de la marca elegida), pieza y cliente propietario se eligen de una lista con buscador. Si no existe, la lista ofrece **Agregar** (con confirmación) y queda para todos.
+- **Placas**: 6 o 7 letras y números, con letras y números a la vez; los guiones y espacios se quitan solos. Se avisa si ya están registradas.
+- **Número de siniestro**: obligatorio en seguro, solo letras y números, de 12 a 16 caracteres (se pasa a mayúsculas solo).
+- **RFC**: formato del SAT (3 o 4 letras, fecha AAMMDD válida y 3 de homoclave).
+- **Los botones no se bloquean**: si falta algo aparece una advertencia y el sistema te lleva al dato que falta, resaltado. Lo mismo al cobrar (piezas sin instalar, descuento inválido, efectivo insuficiente); antes de registrar un cobro se pide confirmación.
+- Si escribiste una pieza o un extra y no le diste «Agregar», se avisa antes de seguir.
+- Cambiar una orden a seguro cuando ya tiene precios, mano de obra o extras pide confirmación.
 
 ### Piezas
 
@@ -84,15 +95,15 @@ La pantalla **Piezas** junta las piezas por atender de todas las órdenes abiert
 
 | Tipo de orden | Se cobra |
 |---|---|
-| Seguro | Piezas que paga el cliente (las que consigue el taller con precio y las piezas extra) + extras, más IVA; más el **deducible**, que ya incluye IVA y no lleva descuento |
+| Seguro | Solo el **deducible**, que ya incluye IVA y no lleva descuento. Las órdenes de seguro **no llevan extras ni cobros aparte**: si el cliente pide algo más, se hace otra orden particular |
 | Particular | Piezas + mano de obra + extras, más IVA |
 
-Los **extras** son trabajos o piezas que el cliente pide aparte de lo autorizado (por ejemplo, pintar todo el carro) y aparecen marcados como `EXTRA` en la orden, el recibo y la cotización. Lo que la aseguradora le paga al taller se lleva fuera del sistema.
+Los **extras** (solo en órdenes particulares) son trabajos que el cliente pide aparte (por ejemplo, pintar todo el carro) y aparecen marcados como `EXTRA` en la orden, el recibo y la cotización. Lo que la aseguradora le paga al taller se lleva fuera del sistema.
 
 ### Flujo de una orden
 
-1. **Generar Orden**: tipo de orden, piezas, mano de obra (particular) y extras.
-2. **Órdenes**: abre el detalle para marcar piezas recibidas, instaladas o devueltas, agregar piezas o cargos y corregir los datos del seguro; avanza la etapa *Recibido → Reparación → Listo*, registra **anticipos** y avisa al cliente con el botón **WhatsApp**, que abre el chat con el mensaje ya escrito; nada se envía solo.
+1. **Generar Orden**: tipo de orden, piezas, mano de obra y extras (particular).
+2. **Órdenes**: la flecha o el folio abren la orden en su **propia página** (`orden.php?id=N`, imprimible) para marcar piezas recibidas, instaladas o devueltas, agregar piezas o cargos y corregir los datos del seguro; avanza la etapa *Recibido → Reparación → Listo*, registra **anticipos** y avisa al cliente con el botón **WhatsApp**, que abre el chat con el mensaje ya escrito; nada se envía solo.
 3. **Cobrar**: disponible cuando todas las piezas están instaladas. **Descuento** en $ o % (no aplica al deducible) e IVA. Los anticipos se restan del total.
 4. **Cancelar**: si hubo anticipos, se registra la devolución.
 

@@ -25,6 +25,8 @@ try {
         }
         $o['fecha_creacion'] = iso_utc($o['fecha_creacion']);
         $o['pagos'] = pagos_de_orden($id);
+        $o['total_venta'] = $o['venta']['precio_total'] ?? null;
+        $o['creada_por'] = $o['usuario'];
         unset($o['venta'], $o['usuario']);
         json_out($o);
     }

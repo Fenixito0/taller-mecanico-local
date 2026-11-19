@@ -41,5 +41,5 @@ require __DIR__ . '/includes/layout_top.php';
   <div class="table-foot" id="foot" hidden></div>
 </div>
 <?php
-$scripts = ['piezas_ui.js', 'ordenes.js'];
+$scripts = ['combo.js', 'piezas_ui.js', 'orden_acciones.js', 'ordenes.js'];
 require __DIR__ . '/includes/layout_bottom.php';

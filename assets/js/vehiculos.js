@@ -45,7 +45,7 @@
     $("#foot").textContent = `Mostrando ${filtered.length} de ${vehiculos.length} vehículos`
   }
 
-  const abrir = (vehiculo) => Forms.vehiculo({ vehiculo, clientes, onSaved: cargar })
+  const abrir = (vehiculo) => Forms.vehiculo({ vehiculo, clientes, vehiculos, onSaved: cargar })
 
   function eliminar(v) {
     confirmDialog({

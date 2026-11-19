@@ -70,6 +70,23 @@ const Combo = (() => {
       box.querySelector(".hl")?.scrollIntoView({ block: "nearest" })
     }
 
+    // Dentro de una ventana modal la lista se saca al <body> para que no la recorte el scroll del modal.
+    const enModal = () => !!host.closest(".modal")
+    function posicionar() {
+      if (box.parentNode !== document.body) return
+      const r = input.getBoundingClientRect()
+      const abajo = window.innerHeight - r.bottom - 12
+      const arriba = r.top - 12
+      const haciaArriba = abajo < 180 && arriba > abajo
+      Object.assign(box.style, {
+        position: "fixed", zIndex: "1000", left: `${r.left}px`, width: `${r.width}px`, right: "auto",
+        top: haciaArriba ? "auto" : `${r.bottom + 4}px`,
+        bottom: haciaArriba ? `${window.innerHeight - r.top + 4}px` : "auto",
+        maxHeight: `${Math.max(140, Math.min(280, haciaArriba ? arriba : abajo))}px`,
+      })
+    }
+    const alMover = () => posicionar()
+
     function abrir() {
       if (abierto) return
       const aviso = o.guard?.()
@@ -81,6 +98,13 @@ const Combo = (() => {
       }
       abierto = true
       hl = Math.max(0, lista().indexOf(valor))
+      if (enModal()) {
+        document.body.appendChild(box)
+        posicionar()
+        setTimeout(posicionar, 380) // el modal termina su animación de entrada
+        window.addEventListener("scroll", alMover, true)
+        window.addEventListener("resize", alMover)
+      }
       box.hidden = false
       input.setAttribute("aria-expanded", "true")
       host.classList.add("open")
@@ -92,6 +116,12 @@ const Combo = (() => {
       box.hidden = true
       input.setAttribute("aria-expanded", "false")
       host.classList.remove("open")
+      if (box.parentNode === document.body) {
+        window.removeEventListener("scroll", alMover, true)
+        window.removeEventListener("resize", alMover)
+        box.removeAttribute("style")
+        host.appendChild(box)
+      }
       if (revertir) input.value = valor
     }
 
@@ -201,5 +231,45 @@ const Combo = (() => {
     })
   }
 
-  return { mount, agregarAlCatalogo }
+  /** Catálogo de marcas/modelos/piezas del servidor (se pide una sola vez por página). */
+  let catPromesa = null
+  function catalogo() {
+    if (!catPromesa) {
+      catPromesa = api("api/catalogo.php").then(({ ok, data }) => {
+        if (!ok) { catPromesa = null; throw new Error(data.error || "No se pudo cargar el catálogo") }
+        data.marcas.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
+        return data
+      })
+    }
+    return catPromesa
+  }
+
+  /** Agrega una marca al catálogo (con confirmación) y la deja en la lista en memoria. */
+  async function agregarMarca(cat, texto) {
+    const r = await agregarAlCatalogo({ tipo: "marca", nombre: texto, etiqueta: "esta marca" })
+    if (!r) return null
+    cat.marcas.push({ id_marca: r.id_marca, nombre: r.nombre, modelos: [] })
+    cat.marcas.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
+    return r.nombre
+  }
+
+  /** Agrega un modelo de la marca indicada (con confirmación). */
+  async function agregarModelo(marca, texto) {
+    const r = await agregarAlCatalogo({ tipo: "modelo", nombre: texto, id_marca: marca.id_marca, etiqueta: "este modelo", contexto: `Marca: ${marca.nombre}` })
+    if (!r) return null
+    marca.modelos.push({ id_modelo: r.id_modelo, nombre: r.nombre })
+    marca.modelos.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
+    return r.nombre
+  }
+
+  /** Agrega una pieza al catálogo (con confirmación). */
+  async function agregarPieza(cat, texto) {
+    const r = await agregarAlCatalogo({ tipo: "pieza", nombre: texto, etiqueta: "esta pieza" })
+    if (!r) return null
+    cat.piezas.push(r.nombre)
+    cat.piezas.sort((a, b) => a.localeCompare(b, "es"))
+    return r.nombre
+  }
+
+  return { mount, agregarAlCatalogo, catalogo, agregarMarca, agregarModelo, agregarPieza }
 })()

@@ -28,5 +28,5 @@ require __DIR__ . '/includes/layout_top.php';
   <div class="table-foot" id="foot"></div>
 </div>
 <?php
-$scripts = ['forms.js', 'vehiculos.js'];
+$scripts = ['combo.js', 'forms.js', 'vehiculos.js'];
 require __DIR__ . '/includes/layout_bottom.php';

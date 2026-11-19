@@ -62,7 +62,7 @@
 
     root.innerHTML = `
       <div class="page-head center">
-        <a href="ordenes.php" class="back-btn" aria-label="Volver"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></a>
+        <a href="orden.php?id=${orden.id_orden}" class="back-btn" aria-label="Volver a la orden"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></a>
         <div>
           <h1 class="page-title">COBRAR VENTA</h1>
           <p class="page-sub" style="margin-top:0">Orden #${pad4(orden.id_orden)} · ${esc(fechaLarga(orden.fecha_creacion))}</p>
@@ -101,7 +101,7 @@
             ${filasCargos ? `<div style="padding:0.75rem 1.25rem">${filasCargos}</div>` : ""}
           </div>
 
-          <div class="panel">
+          <div class="panel"${orden.tipo === "seguro" ? " hidden" : ""}>
             <div class="panel-head"><span class="t">Ajustes de Precio</span></div>
             <div style="padding:1.25rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem">
               <div>
@@ -195,16 +195,16 @@
     $("#quick-cash").innerHTML = opcionesEfectivo(k.restante).map((v, i) =>
       `<button type="button" class="chip${Number(st.efectivo) === v ? " active" : ""}" data-cash="${v.toFixed(2)}">${i === 0 ? "Exacto " : ""}${fmtMXN(v)}</button>`).join("")
 
-    const bloqueado = st.processing || k.insuficiente || k.descInvalido || k.anticipoExcede || k.faltan.length > 0
     const metodoLabel = METODOS.find((m) => m.value === st.metodo).label
     $("#resumen").innerHTML = `
-      ${k.faltan.length ? `<div class="note-bad">No se puede cobrar: faltan por instalar ${esc(k.faltan.map((p) => p.nombre).join(", "))}</div>` : ""}
+      ${k.faltan.length ? `<div class="note-bad">Antes de cobrar marca como instaladas: ${esc(k.faltan.map((p) => p.nombre).join(", "))} · <a href="orden.php?id=${orden.id_orden}#piezas">ir a las piezas</a></div>` : ""}
+      ${orden.tipo === "particular" || k.base > 0 ? `
       <div class="sum-row"><span>Piezas cobradas</span><span style="color:var(--text-2);font-weight:500">${money(k.piezas)}</span></div>
       ${orden.tipo === "particular" ? `<div class="sum-row"><span>Mano de obra</span><span style="color:var(--text-2);font-weight:500">${money(k.manoObra)}</span></div>` : ""}
       <div class="sum-row"><span>Extras</span><span style="color:var(--text-2);font-weight:500">${money(k.extras)}</span></div>
       ${k.descuento > 0 ? `<div class="sum-row"><span>Descuento${st.descTipo === "porcentaje" ? ` (${esc(st.descValor)}%)` : ""}</span><span class="text-green" style="font-weight:600">−${money(k.descuento)}</span></div>` : ""}
       <div class="sum-row"><b>Base</b><b>${money(k.base)}</b></div>
-      <div class="sum-row"><span>IVA (16%)</span><span>${st.aplicaIva ? money(k.iva) : "—"}</span></div>
+      <div class="sum-row"><span>IVA (16%)</span><span>${st.aplicaIva ? money(k.iva) : "—"}</span></div>` : ""}
       ${orden.tipo === "seguro" ? `<div class="sum-row"><span>Deducible (IVA incluido)</span><span>${money(k.deducible)}</span></div>` : ""}
       <div class="sum-total"><span class="l">TOTAL</span><span class="v">${money(k.total)}</span></div>
       ${k.anticipo > 0 ? `<div class="sum-row" style="margin-top:0.6rem"><span>Anticipos recibidos</span><span class="text-green" style="font-weight:600">−${money(k.anticipo)}</span></div>
@@ -215,7 +215,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12"/></svg>
         <p style="font-size:0.75rem;color:var(--green);font-weight:500">Al cobrar, la orden se marcará como <strong>Completada</strong></p>
       </div>
-      <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-cobrar" style="margin-top:1rem" ${bloqueado ? "disabled" : ""}>
+      <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-cobrar" style="margin-top:1rem" ${st.processing ? "disabled" : ""}>
         ${st.processing ? '<span class="spinner sm" style="width:18px;height:18px"></span>PROCESANDO...' : `${ICON.money.replace(/13/g, "18")}REGISTRAR COBRO`}
       </button>
       <p class="kbd-hint t-center" style="display:block;margin-top:0.4rem">Ctrl + Enter para registrar</p>
@@ -223,9 +223,44 @@
     $("#btn-cobrar").addEventListener("click", cobrar)
   }
 
-  async function cobrar() {
+  /** Avisa qué falta y lleva al campo, en lugar de bloquear el botón. */
+  function avisar(msg, sel) {
+    toast(msg, "error")
+    const el = sel && $(sel)
+    if (!el) return
+    el.classList.add("falta")
+    el.scrollIntoView({ block: "center", behavior: "smooth" })
+    if (el.matches("input")) el.focus({ preventScroll: true })
+    setTimeout(() => el.classList.remove("falta"), 2600)
+  }
+
+  function cobrar() {
     const k = calc()
-    if (k.insuficiente || st.processing) return
+    if (st.processing) return
+    if (k.faltan.length) {
+      toast(`Faltan por instalar: ${k.faltan.map((p) => p.nombre).join(", ")}. Te llevo a las piezas de la orden.`, "error")
+      return setTimeout(() => { location.href = `orden.php?id=${orden.id_orden}#piezas` }, 1500)
+    }
+    if (k.descInvalido) return avisar(st.descTipo === "porcentaje" ? "El descuento máximo es 100%" : "El descuento no puede ser mayor que el importe", "#desc-valor")
+    if (k.anticipoExcede) return avisar("Los anticipos superan el total: revisa los cargos o el deducible en la orden", "#resumen")
+    if (k.insuficiente) return avisar(`El efectivo recibido no alcanza: faltan ${money(k.restante - k.efectivo)}`, "#efectivo")
+    const metodoLabel = METODOS.find((m) => m.value === st.metodo).label
+    confirmDialog({
+      icon: ICON.money.replace(/13/g, "24"),
+      title: "¿Registrar el cobro?",
+      detail: `<p class="t">${money(k.restante > 0 ? k.restante : k.total)}</p><p class="m">${k.restante > 0 ? metodoLabel : "Pagado con anticipos"} · Orden #${pad4(orden.id_orden)}</p>
+        ${k.cambio > 0 ? `<p class="s">Cambio a entregar: <b>${money(k.cambio)}</b></p>` : ""}`,
+      note: "La orden quedará como Completada y ya no se podrá modificar.",
+      okText: "SÍ, COBRAR",
+      busyText: "COBRANDO...",
+      okClass: "btn-primary",
+      onConfirm: async () => { registrarCobro(); return null },
+    })
+  }
+
+  async function registrarCobro() {
+    const k = calc()
+    if (st.processing) return
     st.processing = true
     update()
     const errBox = $("#cobro-error")
